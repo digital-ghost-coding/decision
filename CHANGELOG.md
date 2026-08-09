@@ -29,6 +29,77 @@ Toutes les évolutions notables du produit sont conservées dans ce fichier.
 - Le document Web généré porte le titre « Décisions ».
 - Aucun script lint n'est configuré et aucun test visuel sur appareil physique n'est revendiqué.
 
+## [Non publié] — Sélection de l’importance — 2026-08-09
+
+### Audit de l’ancien contrôle
+
+- Le choix d’importance était local à `ArgumentSection` et prenait la forme de trois boutons espacés.
+- Ajout et modification partageaient déjà ce contrôle interne, mais celui-ci n’était pas réutilisable ailleurs.
+- « Important » était déjà sélectionné par défaut et restauré après chaque ajout.
+- La modification chargeait déjà l’importance enregistrée et l’annulation conservait l’ancienne valeur.
+- Les anciennes valeurs étaient déjà normalisées vers les trois poids visibles.
+
+### Sélecteur segmenté
+
+- Un composant centralisé `ImportanceSelector` présente Secondaire, Important et Décisif comme une seule unité compacte.
+- Les trois segments ont la même largeur et une hauteur tactile minimale de 44 points.
+- L’état actif utilise le violet existant ; les états inactif, pressé, désactivé et focus Web s’appuient sur les tokens et composants existants.
+- Le libellé « Importance de cet élément » associe explicitement le contrôle à l’argument en cours.
+- Les annonces accessibles indiquent le nom et l’état sélectionné de chaque radio.
+- Les flèches du clavier permettent de changer de niveau sur Web ; Entrée, Espace et Tab restent pris en charge par le contrôle pressable existant.
+- Une transition d’opacité courte et interrompable accompagne le changement ; elle est supprimée avec Reduce Motion.
+- Le retour haptique de sélection réutilise le service existant, qui ne produit aucun effet sur Web.
+
+### Ajout, modification et responsive
+
+- Le même composant est utilisé pour l’ajout et la modification dans Pour, Contre et les quatre groupes Atouts/Freins.
+- Les libellés acceptent deux lignes et une adaptation typographique contrôlée sur les faibles largeurs.
+- Le badge d’importance des cartes reprend la teinte violette calme du sélecteur sans transformer la carte.
+- Les protections existantes du clavier, du scroll et du CTA restent en place.
+
+### Compatibilité et validation
+
+- Aucun changement du calcul, des balances, des poids `1 / 3 / 5`, des données, des migrations, de la navigation, des versions ou des dépendances.
+- Treize contrôles automatisés couvrent les niveaux, les anciennes valeurs, le calcul, l’ajout, la modification, l’annulation, les six groupes, l’accessibilité, le responsive de code, le clavier Web, les haptics et Reduce Motion.
+- Les 53 tests automatisés du projet et le typecheck TypeScript réussissent.
+- Expo Doctor réussit ses 18 contrôles sur 18.
+- Les bundles de production Web, iOS et Android sont générés avec Expo SDK 54.
+- Aucun script lint n’est configuré.
+- Les vérifications visuelles sur petit et grand iPhone, Android, Web mobile et desktop, clavier natif et Dynamic Type restent manuelles.
+- L’image de référence indiquée dans la consigne n’était plus disponible à son emplacement lors de l’itération.
+
+## [Non publié] — Polish des arguments — 2026-08-09
+
+### Densité et actions
+
+- Le sélecteur d’importance mesure désormais 50 points en taille standard tout en conservant trois zones tactiles d’au moins 44 points.
+- Les cartes d’arguments n’imposent plus de hauteur minimale et grandissent naturellement avec le texte.
+- Le texte et son badge compact restent regroupés à gauche.
+- Les actions sont regroupées à droite sous la forme de deux boutons d’icône cohérents : crayon et corbeille.
+- Chaque action possède une zone de 44 × 44 points, un état pressé, un focus Web visible, un libellé accessible et une infobulle Web.
+- La couleur destructive n’apparaît qu’au pressé sur l’action Supprimer.
+- Le mode modification reste dans la carte, charge l’importance enregistrée et ne sauvegarde qu’après confirmation.
+
+### Correction du scroll
+
+- La cause répétitive dans les arguments était l’appel d’autoscroll depuis `onContentSizeChange` à chaque évolution du champ, suivi d’un second repositionnement différé de 320 ms.
+- Ces déclenchements liés à la frappe et la temporisation ont été supprimés.
+- Le seul repositionnement restant intervient une fois au focus, dans la prochaine frame de rendu, et est annulé dès le début d’un scroll manuel.
+- Dans Nouvelle décision, le champ multiligne conserve une hauteur stable de 90 points afin que la frappe et le compteur ne modifient plus sa géométrie pendant que le clavier le maintient visible.
+- Sur Web, aucun autoscroll programmatique n’est déclenché.
+
+### Compatibilité et validation
+
+- Aucun changement du calcul, des poids `1 / 3 / 5`, des données, des migrations, de la navigation, des versions ou des dépendances.
+- Dix nouveaux tests automatisés couvrent la hauteur, les zones tactiles, les cartes, les badges, les actions, la modification inline, le scroll et le calcul.
+- Les 63 tests automatisés du projet et le typecheck TypeScript réussissent.
+- Expo Doctor réussit ses 18 contrôles sur 18.
+- Les bundles Web, iOS et Android sont générés avec Expo SDK 54.
+- Le serveur Web Metro et son bundle de développement répondent correctement.
+- Aucun script lint n’est configuré ; aucun test visuel Web n’est revendiqué.
+- Les captures `IMG_3644.PNG` et `IMG_3645.PNG` n’étaient plus disponibles aux emplacements indiqués.
+- Les validations tactiles iOS et Android, Web interactive, Dynamic Type, VoiceOver et TalkBack restent manuelles.
+
 ## [Non publié] — Résultat et engagement compacts — 2026-08-09
 
 ### État réel avant modification

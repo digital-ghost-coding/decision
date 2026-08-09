@@ -113,6 +113,14 @@ Comparer deux options ne consiste pas à compter leurs avantages. Une décision 
 
 Chaque option possède donc ses propres atouts et ses propres freins. Leur importance est rendue compréhensible avec trois niveaux — Secondaire, Important et Décisif — plutôt qu'avec une note numérique visible.
 
+Exprimer ce qui compte doit rester simple.
+
+L’importance d’un argument doit pouvoir être comprise et ajustée en un geste, sans interrompre la réflexion.
+
+Les informations répétitives doivent rester compactes.
+
+La densité visuelle doit s’adapter au rôle de chaque composant, sans sacrifier le confort tactile ni la compréhension.
+
 Un élément décisif peut avoir plus de poids que plusieurs éléments secondaires, selon leur nombre et leur importance cumulée. Avec la correspondance actuelle, un élément décisif pèse davantage que quatre éléments secondaires, mais pas davantage qu'un nombre illimité d'éléments. Décisions rend cette importance visible sans prétendre choisir à la place de l'utilisateur.
 
 La tendance comparative repose sur une balance transparente : les atouts augmentent la balance de leur option et les freins la diminuent. Une balance identique est présentée comme une tendance partagée, jamais comme une erreur à résoudre.

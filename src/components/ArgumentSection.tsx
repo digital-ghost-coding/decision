@@ -1,4 +1,4 @@
-import { memo, useRef, useState } from 'react';
+import { memo, useState } from 'react';
 import {
   Platform,
   StyleSheet,
@@ -22,6 +22,7 @@ import { AppIcon } from './AppIcon';
 import { AnimatedPressable } from './AnimatedPressable';
 import { FadeInView } from './FadeInView';
 import { ImportanceSelector } from './ImportanceSelector';
+import { IconButton } from './IconButton';
 
 type Props = {
   argumentsList: Argument[];
@@ -62,7 +63,6 @@ function ArgumentSectionComponent({
   const [editingWeight, setEditingWeight] = useState<ArgumentWeight>(
     DEFAULT_ARGUMENT_WEIGHT,
   );
-  const activeFieldTarget = useRef<number | null>(null);
   const canAdd = value.trim().length > 0;
   const canSaveEdit = editingText.trim().length > 0;
 
@@ -100,13 +100,6 @@ function ArgumentSectionComponent({
     onUpdate(editingId, normalizedText, editingWeight);
     cancelEditing();
   };
-
-  const revealActiveField = () => {
-    if (activeFieldTarget.current !== null) {
-      onFieldFocus?.(activeFieldTarget.current);
-    }
-  };
-
   return (
     <View style={[styles.section, embedded && styles.sectionEmbedded]}>
       <View style={styles.heading}>
@@ -135,13 +128,8 @@ function ArgumentSectionComponent({
                       accessibilityLabel={`Modifier ${argument.text}`}
                       autoFocus
                       multiline
-                      onBlur={() => {
-                        activeFieldTarget.current = null;
-                      }}
                       onChangeText={setEditingText}
-                      onContentSizeChange={revealActiveField}
                       onFocus={(event) => {
-                        activeFieldTarget.current = event.nativeEvent.target;
                         onFieldFocus?.(event.nativeEvent.target);
                       }}
                       onSubmitEditing={saveEditing}
@@ -193,31 +181,19 @@ function ArgumentSectionComponent({
                       </Text>
                     </View>
                     <View style={styles.argumentActions}>
-                      <AnimatedPressable
-                        accessibilityLabel={`Modifier l’argument ${argument.text}`}
-                        accessibilityRole="button"
-                        hitSlop={8}
+                      <IconButton
+                        accessibilityHint="Ouvre la modification de cet argument"
+                        icon="edit"
+                        label="Modifier cet argument"
                         onPress={() => startEditing(argument)}
-                        pressedStyle={styles.removeButtonPressed}
-                        style={styles.editButton}
-                      >
-                        <Text style={styles.editButtonText}>Modifier</Text>
-                      </AnimatedPressable>
-                      <AnimatedPressable
-                        accessibilityLabel={`Supprimer l’argument ${argument.text}`}
-                        accessibilityRole="button"
-                        hitSlop={8}
+                      />
+                      <IconButton
+                        accessibilityHint="Supprime cet argument"
+                        destructive
+                        icon="delete"
+                        label="Supprimer cet argument"
                         onPress={() => onRemove(argument.id)}
-                        pressedStyle={styles.removeButtonPressed}
-                        style={styles.removeButton}
-                      >
-                        <AppIcon
-                          color={colors.secondaryText}
-                          name="delete"
-                          size="sm"
-                          weight="regular"
-                        />
-                      </AnimatedPressable>
+                      />
                     </View>
                   </>
                 )}
@@ -240,13 +216,10 @@ function ArgumentSectionComponent({
               multiline
               onBlur={() => {
                 setIsFocused(false);
-                activeFieldTarget.current = null;
               }}
               onChangeText={setValue}
-              onContentSizeChange={revealActiveField}
               onFocus={(event) => {
                 setIsFocused(true);
-                activeFieldTarget.current = event.nativeEvent.target;
                 onFieldFocus?.(event.nativeEvent.target);
               }}
               onSubmitEditing={addArgument}
@@ -340,12 +313,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   argumentCard: {
-    minHeight: layout.touchTarget + 8,
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: spacing.base,
+    alignItems: 'flex-start',
+    paddingVertical: spacing.sm,
     paddingLeft: spacing.md,
-    paddingRight: spacing.sm,
+    paddingRight: spacing.xxs,
     borderRadius: radii.field,
     backgroundColor: colors.background,
   },
@@ -369,30 +341,10 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   argumentActions: {
-    marginLeft: spacing.sm,
-    alignItems: 'flex-end',
-    gap: spacing.xs,
-  },
-  editButton: {
-    minHeight: 28,
-    justifyContent: 'center',
-    paddingHorizontal: spacing.xs,
-    borderRadius: radii.xs,
-  },
-  editButtonText: {
-    color: colors.primary,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  removeButton: {
-    width: 32,
-    height: 32,
+    marginLeft: spacing.xs,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: radii.sm,
-  },
-  removeButtonPressed: {
-    backgroundColor: colors.disabled,
+    gap: spacing.xxs,
   },
   addArea: {
     marginTop: spacing.md,

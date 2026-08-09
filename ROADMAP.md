@@ -153,6 +153,38 @@ Le format appartient à chaque décision, jamais au profil de l'utilisateur. Les
 
 La balance d'une option correspond à la somme pondérée de ses atouts moins la somme pondérée de ses freins. Les niveaux visibles utilisent une correspondance unique : Secondaire = 1, Important = 3 et Décisif = 5. Une tendance reste une aide à la lecture ; elle n'impose jamais le choix final.
 
+## Sélection de l’importance
+
+- [x] Sélecteur segmenté centralisé
+- [x] Ergonomie tactile
+- [x] Cohérence ajout et modification
+- [x] Haptique légère
+- [x] Focus et clavier Web
+- [ ] Responsive mobile vérifié visuellement
+- [x] Compatibilité des anciennes valeurs
+- [x] Vérification automatisée Pour / Contre
+- [x] Vérification automatisée Atouts / Freins
+- [ ] Vérification visuelle Dynamic Type
+
+Le contrôle conserve les valeurs métier `1 / 3 / 5` et la valeur « Important » par défaut. Les validations visuelles sur petites et grandes largeurs, avec le clavier natif et Dynamic Type, restent distinctes des contrôles de code et des bundles.
+
+## Polish des arguments
+
+- [x] Sélecteur d’importance compact
+- [x] Cartes d’arguments compactes
+- [x] Actions Modifier et Supprimer harmonisées
+- [x] Badge d’importance maintenu sous l’argument
+- [x] Modification inline clarifiée
+- [x] Scroll manuel prioritaire dans le code
+- [x] Autoscroll non répétitif couvert par test
+- [ ] Clavier iOS vérifié sur appareil
+- [ ] Clavier Android vérifié sur appareil
+- [ ] Comportement Web vérifié interactivement
+- [ ] Accessibilité vérifiée avec technologies d’assistance
+
+Le sélecteur mesure 50 points en taille standard et conserve des segments tactiles de 44 points. Les champs ne relancent plus le repositionnement lors de leurs changements de contenu ; un scroll manuel annule immédiatement le seul repositionnement programmé au focus.
+
+
 ### Statut de validation de l'itération
 
 - [x] Implémentation technique de « Comparaison équilibrée »

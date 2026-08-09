@@ -60,37 +60,50 @@ export function DecisionArgumentsScreen({ navigation, route }: Props) {
   const nextId = useRef(0);
   const analysisLock = useRef(false);
   const scrollViewRef = useRef<ScrollView>(null);
-  const revealTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const revealFrame = useRef<number | null>(null);
+  const manualScrollStarted = useRef(false);
 
-  const revealFocusedField = useCallback((target: number) => {
-    if (Platform.OS === 'web') {
-      return;
+  const cancelPendingReveal = useCallback(() => {
+    if (revealFrame.current !== null) {
+      cancelAnimationFrame(revealFrame.current);
+      revealFrame.current = null;
     }
-
-    const reveal = () => {
-      scrollViewRef.current?.scrollResponderScrollNativeHandleToKeyboard(
-        target,
-        168,
-        true,
-      );
-    };
-
-    requestAnimationFrame(reveal);
-
-    if (revealTimeout.current) {
-      clearTimeout(revealTimeout.current);
-    }
-
-    revealTimeout.current = setTimeout(reveal, 320);
   }, []);
 
-  useEffect(
-    () => () => {
-      if (revealTimeout.current) {
-        clearTimeout(revealTimeout.current);
+  const revealFocusedField = useCallback(
+    (target: number) => {
+      if (Platform.OS === 'web') {
+        return;
       }
+
+      manualScrollStarted.current = false;
+      cancelPendingReveal();
+
+      revealFrame.current = requestAnimationFrame(() => {
+        revealFrame.current = null;
+
+        if (manualScrollStarted.current) {
+          return;
+        }
+
+        scrollViewRef.current?.scrollResponderScrollNativeHandleToKeyboard(
+          target,
+          168,
+          true,
+        );
+      });
     },
-    [],
+    [cancelPendingReveal],
+  );
+
+  const handleManualScroll = useCallback(() => {
+    manualScrollStarted.current = true;
+    cancelPendingReveal();
+  }, [cancelPendingReveal]);
+
+  useEffect(
+    () => cancelPendingReveal,
+    [cancelPendingReveal],
   );
 
   const addArgument = useCallback(
@@ -292,6 +305,7 @@ const analyzeDecision = () => {
               : 'on-drag'
           }
           keyboardShouldPersistTaps="handled"
+          onScrollBeginDrag={handleManualScroll}
           ref={scrollViewRef}
           showsVerticalScrollIndicator={false}
         >

@@ -39,6 +39,57 @@ export function NewDecisionScreen({ navigation }: Props) {
 
   const validationLock = useRef(false);
 
+  const scrollViewRef = useRef<ScrollView>(null);
+  const questionRevealFrame = useRef<number | null>(null);
+  const questionRevealDone = useRef(false);
+  const manualScrollStarted = useRef(false);
+
+  const cancelQuestionReveal = () => {
+    if (questionRevealFrame.current !== null) {
+      cancelAnimationFrame(questionRevealFrame.current);
+      questionRevealFrame.current = null;
+    }
+  };
+
+  const revealQuestionField = (target: number) => {
+    setIsFocused(true);
+    manualScrollStarted.current = false;
+
+    if (
+      Platform.OS === 'web' ||
+      questionRevealDone.current
+    ) {
+      return;
+    }
+
+    questionRevealDone.current = true;
+    cancelQuestionReveal();
+
+    questionRevealFrame.current = requestAnimationFrame(() => {
+      questionRevealFrame.current = null;
+
+      if (manualScrollStarted.current) {
+        return;
+      }
+
+      scrollViewRef.current?.scrollResponderScrollNativeHandleToKeyboard(
+        target,
+        spacing.lg,
+        true,
+      );
+    });
+  };
+
+  const handleQuestionBlur = () => {
+    setIsFocused(false);
+    questionRevealDone.current = false;
+    cancelQuestionReveal();
+  };
+
+  const handleManualScroll = () => {
+    manualScrollStarted.current = true;
+    cancelQuestionReveal();
+  };
   const comparisonIsAmbiguous =
     format === 'evaluate' && looksLikeComparison(question);
   const hasBothOptions =
@@ -95,6 +146,8 @@ export function NewDecisionScreen({ navigation }: Props) {
           }
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
+          onScrollBeginDrag={handleManualScroll}
+          ref={scrollViewRef}
         >
           <View style={styles.screen}>
             <BackButton onPress={goBack} />
@@ -174,9 +227,11 @@ export function NewDecisionScreen({ navigation }: Props) {
                   accessibilityHint="Décrivez la décision que vous souhaitez prendre"
                   maxLength={MAX_CHARACTERS}
                   multiline
-                  onBlur={() => setIsFocused(false)}
+                  onBlur={handleQuestionBlur}
                   onChangeText={setQuestion}
-                  onFocus={() => setIsFocused(true)}
+                  onFocus={(event) => {
+                    revealQuestionField(event.nativeEvent.target);
+                  }}
                   placeholder={
                     format === 'compare'
                       ? 'Ex. Quel créneau convient le mieux pour le bénévolat ?'
@@ -337,7 +392,7 @@ const styles = StyleSheet.create({
 
   formatCard: {
     minHeight: layout.touchTarget,
-    padding: spacing.base,
+    padding: spacing.md,
     borderWidth: 1.5,
     borderColor: colors.border,
     borderRadius: radii.md,
@@ -384,7 +439,7 @@ const styles = StyleSheet.create({
   },
 
   input: {
-    minHeight: 90,
+    height: 90,
     padding: 0,
     color: colors.text,
     fontSize: 17,

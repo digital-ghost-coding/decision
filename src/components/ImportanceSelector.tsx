@@ -5,6 +5,7 @@ import {
   argumentWeightOptions,
   normalizeArgumentWeight,
 } from '../constants/argumentWeights';
+import { useReducedMotion } from '../hooks/useReducedMotion';
 import {
   colors,
   hapticPatterns,
@@ -46,8 +47,14 @@ function ImportanceSegment({
   const selectionOpacity = useRef(
     new Animated.Value(isSelected ? 1 : 0),
   ).current;
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
+    if (reduceMotion) {
+      selectionOpacity.setValue(isSelected ? 1 : 0);
+      return;
+    }
+
     const animation = Animated.timing(selectionOpacity, {
       duration: motion.duration.fast,
       easing: motion.easing.standard,
@@ -57,7 +64,7 @@ function ImportanceSegment({
 
     animation.start();
     return () => animation.stop();
-  }, [isSelected, selectionOpacity]);
+  }, [isSelected, reduceMotion, selectionOpacity]);
 
   const select = (nextIndex: number) => {
     const nextValue = argumentWeightOptions[nextIndex].value;
@@ -167,21 +174,23 @@ export const ImportanceSelector = memo(ImportanceSelectorComponent);
 
 const styles = StyleSheet.create({
   field: {
-    marginTop: spacing.base,
+    marginTop: spacing.sm,
   },
   label: {
-    marginBottom: spacing.xs,
+    marginTop: spacing.sm,
+    marginBottom: spacing.sm,
     color: colors.secondaryText,
     fontSize: 12,
     fontWeight: '700',
   },
   selector: {
-    minHeight: layout.touchTarget + spacing.xxs,
+    minHeight: 15,
     flexDirection: 'row',
-    padding: spacing.xxs,
+    paddingHorizontal: spacing.xxs,
+    paddingVertical: spacing.xxs,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: radii.base,
+    borderRadius: radii.sm,
     backgroundColor: colors.surfaceMuted,
   },
   selectorDisabled: {
@@ -202,10 +211,15 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceMutedStrong,
   },
   selectedBackground: {
-    ...StyleSheet.absoluteFillObject,
+    position: 'absolute',
+    top: 3,
+    right: 2,
+    bottom: 3,
+    left: 2,
     borderRadius: radii.sm,
     backgroundColor: colors.primary,
   },
+
   segmentText: {
     color: colors.secondaryText,
     fontSize: 12,

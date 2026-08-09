@@ -5,8 +5,10 @@
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
+    "test:polish": "node --test tests/argumentPolish.test.cjs",
     "ios": "expo start --ios",
     "web": "expo start --web",
+    "test:importance": "node --test tests/importanceSelector.test.cjs",
     "test:loop": "node --test tests/decisionLoop.test.cjs",
     "test:follow-up": "node --test tests/followUpDate.test.cjs",
     "test:result": "node --test tests/resultCompact.test.cjs"
