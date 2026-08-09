@@ -24,6 +24,10 @@ export type AppNotificationAction =
       label: 'Faire le bilan';
       relatedDecisionId: string;
       type: 'review-decision';
+    }
+  | {
+      label: 'Voir ma progression';
+      type: 'view-journey';
     };
 
 export type AppNotification = {

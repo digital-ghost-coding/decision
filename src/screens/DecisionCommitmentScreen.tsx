@@ -74,6 +74,7 @@ export function DecisionCommitmentScreen({
             name: 'DecisionFollowUp',
             params: {
               decision: actedDecision,
+              origin: 'commitment',
             },
           },
         ],

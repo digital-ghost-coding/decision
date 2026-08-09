@@ -18,6 +18,11 @@ export type ArgumentWeight =
   | 4
   | 5;
 
+export type ArgumentWeightLevel =
+  | 'secondary'
+  | 'important'
+  | 'decisive';
+
 
 export type Argument = {
   id: string;
@@ -72,6 +77,14 @@ export type Decision = {
    * Manière dont cette décision doit être comprise par tout le parcours.
    */
   format: DecisionFormat;
+
+  /**
+   * Version du sens donné à `side` dans une comparaison.
+   *
+   * La version 2 signifie que `pro` est un atout et `con` un frein,
+   * indépendamment de l'option ciblée.
+   */
+  argumentModelVersion?: 2;
 
 
   /**
@@ -173,6 +186,11 @@ export type DecisionScore = {
    */
   conCount: number;
 
+  /**
+   * Somme pondérée des arguments défavorables.
+   */
+  conWeight: number;
+
 
 
   /**
@@ -194,6 +212,11 @@ export type DecisionScore = {
    */
   proCount: number;
 
+  /**
+   * Somme pondérée des arguments favorables.
+   */
+  proWeight: number;
+
 
 
   /**
@@ -208,4 +231,18 @@ export type DecisionScore = {
     | 'negative'
     | 'neutral';
 
+  comparison?: {
+    optionA: DecisionOptionScore;
+    optionB: DecisionOptionScore;
+    result: DecisionOptionKey | 'tie';
+  };
+
+};
+
+export type DecisionOptionScore = {
+  balance: number;
+  conCount: number;
+  conWeight: number;
+  proCount: number;
+  proWeight: number;
 };

@@ -109,6 +109,14 @@ Une formulation contenant « ou » alors que le mode évaluation est sélectionn
 
 Avant l'engagement, l'utilisateur choisit explicitement l'option qu'il retient. Le résultat peut mettre en évidence une tendance, mais il ne choisit jamais à sa place. Le cercle d'engagement confirme et enregistre ce choix concret, jamais uniquement le texte d'une question.
 
+Comparer deux options ne consiste pas à compter leurs avantages. Une décision devient plus claire lorsque l'utilisateur peut exprimer ce que chaque option lui apporte, ce qu'elle lui coûte et ce qui compte réellement pour lui.
+
+Chaque option possède donc ses propres atouts et ses propres freins. Leur importance est rendue compréhensible avec trois niveaux — Secondaire, Important et Décisif — plutôt qu'avec une note numérique visible.
+
+Un élément décisif peut avoir plus de poids que plusieurs éléments secondaires, selon leur nombre et leur importance cumulée. Avec la correspondance actuelle, un élément décisif pèse davantage que quatre éléments secondaires, mais pas davantage qu'un nombre illimité d'éléments. Decisionly rend cette importance visible sans prétendre choisir à la place de l'utilisateur.
+
+La tendance comparative repose sur une balance transparente : les atouts augmentent la balance de leur option et les freins la diminuent. Une balance identique est présentée comme une tendance partagée, jamais comme une erreur à résoudre.
+
 ### Actions intentionnelles
 
 Une action principale décrit la conséquence réelle de son activation. « Continuer », « Valider » et « Suivant » sont réservés aux rares situations où aucune intention plus précise n'existe.
@@ -233,13 +241,13 @@ Decisionly accompagne l'utilisateur avant, pendant et après son choix.
 
 Son parcours métier prévoit six états principaux : brouillon (`draft`), réflexion (`reflecting`), actée (`acted`), en suivi (`tracking`), terminée (`completed`) et annulée (`cancelled`). L'archivage (`archived`) reste un état de classement transversal. Les transitions sont contrôlées par une logique centrale afin que les écrans, les statistiques et les futurs rappels partagent les mêmes règles.
 
-Ce cycle raconte quatre temps complémentaires : réflexion, décision, action et retour d'expérience. Une échéance de suivi peut être choisie après l'engagement, mais elle n'est jamais imposée. Reporter ce choix ou changer d'avis reste une décision légitime.
+Ce cycle raconte quatre temps complémentaires : réflexion, décision, action et retour d'expérience. Une échéance de suivi peut être choisie après l'engagement, mais elle n'est jamais imposée. Le suivi est une possibilité, jamais une obligation. Refuser un rappel ne signifie pas abandonner une décision. Reporter ce choix ou changer d'avis reste une décision légitime.
 
 L'archivage masque la décision de la liste principale sans supprimer ses arguments. Une archive mémorise son statut précédent pour pouvoir être restaurée correctement.
 
 Une décision actée apparaîtra dans une section dédiée « Décisions actées ». Si l'utilisateur annule ou change d'avis, il pourra revenir à un état antérieur sans supprimer la décision. Chaque changement de statut devra être horodaté et conservé afin de préserver l'histoire du choix.
 
-Lorsqu'une décision actée a réellement produit son effet ou n'appelle plus d'action, l'utilisateur peut la marquer comme terminée depuis « Mes décisions ». Elle passe alors de `acted` à `completed`, rejoint la section « Décisions terminées » et alimente les jalons du Parcours. Une action temporaire « Annuler » permet de revenir au statut précédent sans perdre la décision ni ses arguments.
+Lorsqu'une décision actée a réellement produit son effet ou n'appelle plus d'action, l'utilisateur est invité à faire son bilan. Une décision terminée passe par un retour d'expérience. Decisionly ne ferme pas simplement un statut : l'application aide l'utilisateur à comprendre ce qu'il souhaite retenir. Les anciennes décisions déjà terminées sans bilan restent compatibles et peuvent recevoir cet apprentissage plus tard.
 
 Le succès de Decisionly n'est pas le nombre de décisions terminées.
 
@@ -247,7 +255,7 @@ C'est la capacité de l'utilisateur à apprendre de ses propres décisions.
 
 > « Une décision n'a de valeur que si l'utilisateur peut apprendre de ce qui s'est réellement passé. »
 
-Decisionly transforme chaque décision passée en expérience d'apprentissage. Le suivi relie l'intention au résultat réel : l'utilisateur choisit librement un moment pour revenir, fait un bilan simple et conserve ce qu'il souhaite retenir.
+Decisionly transforme chaque décision passée en expérience d'apprentissage. Le suivi relie l'intention au résultat réel : l'utilisateur choisit librement un moment pour revenir, fait un bilan simple et conserve ce qu'il souhaite retenir. Après le bilan, l'utilisateur revient à la mémoire de ses décisions afin de voir immédiatement le chemin parcouru.
 
 Cette boucle reste calme et non culpabilisante. Une échéance est une invitation, jamais une obligation, et l'utilisateur peut faire son bilan plus tôt, modifier le suivi ou choisir de ne pas le planifier.
 ## Mes décisions
@@ -295,21 +303,21 @@ L'action secondaire « Continuer plus tard » permet de quitter ce moment sans p
 
 ### Confirmation et droit de revenir en arrière
 
-Après le choix de suivi, une notification discrète « Décision actée » apparaît en haut de l'écran avec l'action « Voir la décision ». Elle permet de retrouver immédiatement le choix concerné. La notification peut également être fermée par sa croix, un balayage horizontal ou sa disparition automatique.
+Après le choix de suivi, une notification discrète « Décision actée » apparaît en haut de l'écran avec l'action « Voir ma progression ». Elle ouvre Parcours afin de relier le choix qui vient d'être acté à l'évolution personnelle de l'utilisateur. La notification peut également être fermée par sa croix, un balayage horizontal ou sa disparition automatique.
 
 La notification n'utilise aucune modale plein écran et ne bloque jamais l'interface. L'utilisateur peut continuer à interagir avec l'application pendant son affichage.
 
 ### Suivi facultatif
 
-Après avoir acté une décision, une étape calme demande : « Quand souhaitez-vous faire le point ? » Les choix disponibles sont :
+Après avoir acté une décision, une étape calme demande d'abord : « Souhaitez-vous faire le point plus tard ? » Deux réponses sans ambiguïté sont proposées : « Oui, choisir un moment » et « Pas maintenant ». Les dates n'apparaissent qu'après l'intention positive :
 
 - Dans 1 semaine.
 - Dans 1 mois.
 - Dans 3 mois.
 - Dans 6 mois.
-- Je choisirai plus tard.
+- Choisir une date.
 
-Cette étape reste facultative. Une échéance place la décision en suivi ; « Je choisirai plus tard » la conserve comme actée sans date. À l'échéance, Decisionly crée un rappel interne persistant menant au bilan. Les notifications système et la page complète Decision Inbox pourront prolonger ce socle plus tard.
+Cette étape reste facultative. Une échéance place la décision en suivi ; « Pas maintenant » la conserve comme actée sans date et sans rappel. Un suivi existant peut être modifié ou supprimé explicitement sans supprimer la décision. À l'échéance, Decisionly crée un rappel interne persistant menant au bilan. Les notifications système et la page complète Decision Inbox pourront prolonger ce socle plus tard.
 
 Le cercle doit donner du poids au moment sans culpabiliser ni enfermer l'utilisateur. Acter une décision reste un engagement personnel réversible, présenté avec calme, confiance et retenue.
 
@@ -339,11 +347,11 @@ Icons8 Ouch! peut uniquement servir de placeholder temporaire pendant les tests.
 
 Le niveau de finition ne repose pas sur la quantité d'effets, mais sur leur cohérence. Une carte apparaît pour guider le regard, un bouton réagit pour confirmer le toucher et une transition prolonge le geste de navigation. Aucune animation ne doit ralentir une action, détourner l'attention ou rivaliser avec le cercle d'engagement.
 
-Pendant une saisie, l'action locale liée au champ reste prioritaire. Une action de fin de parcours ne doit jamais concurrencer le clavier, masquer le contenu en cours d'édition ou gêner un bouton d'ajout. Elle peut se retirer temporairement, puis revenir dès que le clavier est fermé : sa disponibilité reste claire sans encombrer le moment de saisie.
+Pendant une saisie, l'action locale liée au texte est prioritaire. Une action de fin de parcours ne doit jamais concurrencer le clavier, masquer le contenu en cours d'édition ou gêner un bouton d'ajout. Elle peut se retirer temporairement, puis revenir dès que le clavier est fermé : sa disponibilité reste claire sans encombrer le moment de saisie. Le clavier ne doit jamais masquer le contenu que l'utilisateur est en train de construire.
 
 Les mouvements utilisent des durées courtes, des courbes naturelles et une amplitude discrète. Le réglage système « Réduire les animations » est respecté dans les composants animés. Les haptics restent sémantiques : légers pour une action principale, discrets pour une sélection et plus marqués uniquement lors d'une confirmation importante.
 
-L'accessibilité fait partie de la qualité perçue. Les actions doivent rester utilisables sans swipe, les zones tactiles mesurer au moins 44 points, le focus clavier rester visible sur le Web et les mises en page accepter Dynamic Type sans masquer une action. VoiceOver et TalkBack doivent pouvoir comprendre la hiérarchie, l'état et la conséquence de chaque interaction.
+L'accessibilité fait partie de la qualité perçue. Un geste caché ne doit jamais être le seul moyen d'accéder à une action importante. Les interactions de Decisionly doivent rester découvrables, réversibles et compatibles avec le scroll naturel de la plateforme. Les actions doivent rester utilisables sans swipe, les zones tactiles mesurer au moins 44 points, le focus clavier rester visible sur le Web et les mises en page accepter Dynamic Type sans masquer une action. VoiceOver et TalkBack doivent pouvoir comprendre la hiérarchie, l'état et la conséquence de chaque interaction.
 
 Le polish doit également protéger les performances. Les animations privilégient les propriétés compatibles avec le pilote natif, les abonnements système sont mutualisés et les composants ne sont mémorisés que lorsque leurs données et callbacks sont suffisamment stables pour que cela soit utile.
 

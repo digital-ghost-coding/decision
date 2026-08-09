@@ -13,6 +13,8 @@ export type MainTabParamList = {
     | undefined;
   DecisionList:
     | {
+        filter?: 'all' | 'in-progress' | 'acted' | 'completed' | 'archived';
+        highlightedDecisionId?: string;
         notification?: AppNotification;
       }
     | undefined;
@@ -37,6 +39,7 @@ DecisionArguments: {
   };
   DecisionFollowUp: {
     decision: Decision;
+    origin?: 'commitment' | 'detail';
   };
   DecisionDetail: {
     decisionId: string;

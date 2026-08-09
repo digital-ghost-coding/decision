@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import { normalizeArgumentWeight } from '../constants/argumentWeights';
 import type {
   ActiveDecisionStatus,
   Argument,
@@ -45,7 +46,9 @@ function isArgument(value: unknown): value is Argument {
     typeof argument.text === 'string' &&
     (argument.optionKey === undefined ||
       argument.optionKey === 'optionA' ||
-      argument.optionKey === 'optionB')
+      argument.optionKey === 'optionB') &&
+    (argument.weight === undefined ||
+      [1, 2, 3, 4, 5].includes(argument.weight))
   );
 }
 
@@ -53,10 +56,21 @@ function normalizeArgument(
   argument: Argument,
   format: DecisionFormat,
   optionKey: DecisionOptionKey,
+  legacyComparison: boolean,
 ): Argument {
   return {
     ...argument,
-    optionKey: format === 'compare' ? argument.optionKey ?? optionKey : undefined,
+    optionKey:
+      format === 'compare'
+        ? legacyComparison
+          ? optionKey
+          : argument.optionKey ?? optionKey
+        : undefined,
+    side:
+      format === 'compare' && legacyComparison
+        ? 'pro'
+        : argument.side,
+    weight: normalizeArgumentWeight(argument.weight),
   };
 }
 
@@ -77,7 +91,7 @@ function isDecisionSatisfaction(
   );
 }
 
-function normalizeDecision(value: unknown): Decision | null {
+export function normalizeStoredDecision(value: unknown): Decision | null {
   if (!value || typeof value !== 'object') {
     return null;
   }
@@ -129,12 +143,15 @@ function normalizeDecision(value: unknown): Decision | null {
       : options
         ? 'compare'
         : 'evaluate';
+  const legacyComparison =
+    format === 'compare' && decision.argumentModelVersion !== 2;
 
 
 
 return {
   id: decision.id,
   format,
+  argumentModelVersion: 2,
   title: decision.title,
   options,
   chosenOption:
@@ -143,10 +160,10 @@ return {
       ? decision.chosenOption.trim()
       : undefined,
   pros: decision.pros.map((argument) =>
-    normalizeArgument(argument, format, 'optionA'),
+    normalizeArgument(argument, format, 'optionA', legacyComparison),
   ),
   cons: decision.cons.map((argument) =>
-    normalizeArgument(argument, format, 'optionB'),
+    normalizeArgument(argument, format, 'optionB', legacyComparison),
   ),
     createdAt: decision.createdAt,
     updatedAt:
@@ -214,7 +231,7 @@ export async function getDecisions(): Promise<Decision[]> {
 
   const migratedDecisions = sortByMostRecent(
     parsedValue
-      .map(normalizeDecision)
+      .map(normalizeStoredDecision)
       .filter((decision): decision is Decision => decision !== null),
   );
 
@@ -237,15 +254,21 @@ export async function getDecision(id: string): Promise<Decision | undefined> {
 
 export async function saveDecision(decision: Decision): Promise<void> {
   const decisions = await getDecisions();
+  const normalizedDecision = normalizeStoredDecision(decision);
+
+  if (!normalizedDecision) {
+    throw new Error('Décision invalide');
+  }
+
   const existingIndex = decisions.findIndex(
-    (storedDecision) => storedDecision.id === decision.id,
+    (storedDecision) => storedDecision.id === normalizedDecision.id,
   );
   const nextDecisions = [...decisions];
 
   if (existingIndex >= 0) {
-    nextDecisions[existingIndex] = decision;
+    nextDecisions[existingIndex] = normalizedDecision;
   } else {
-    nextDecisions.push(decision);
+    nextDecisions.push(normalizedDecision);
   }
 
   await AsyncStorage.setItem(

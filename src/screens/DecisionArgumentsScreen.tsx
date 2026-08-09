@@ -1,6 +1,12 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   Keyboard,
   KeyboardAvoidingView,
@@ -18,7 +24,13 @@ import { FadeInView } from '../components/FadeInView';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { useKeyboardVisibility } from '../hooks/useKeyboardVisibility';
 import { colors, layout, radii, spacing } from '../theme';
-import type { Argument, ArgumentSide, Decision } from '../types/decision';
+import type {
+  Argument,
+  ArgumentSide,
+  ArgumentWeight,
+  Decision,
+  DecisionOptionKey,
+} from '../types/decision';
 import type { RootStackParamList } from '../types/navigation';
 
 type Props = NativeStackScreenProps<
@@ -47,21 +59,58 @@ export function DecisionArgumentsScreen({ navigation, route }: Props) {
 
   const nextId = useRef(0);
   const analysisLock = useRef(false);
+  const scrollViewRef = useRef<ScrollView>(null);
+  const revealTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const revealFocusedField = useCallback((target: number) => {
+    if (Platform.OS === 'web') {
+      return;
+    }
+
+    const reveal = () => {
+      scrollViewRef.current?.scrollResponderScrollNativeHandleToKeyboard(
+        target,
+        168,
+        true,
+      );
+    };
+
+    requestAnimationFrame(reveal);
+
+    if (revealTimeout.current) {
+      clearTimeout(revealTimeout.current);
+    }
+
+    revealTimeout.current = setTimeout(reveal, 320);
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (revealTimeout.current) {
+        clearTimeout(revealTimeout.current);
+      }
+    },
+    [],
+  );
 
   const addArgument = useCallback(
-    (text: string, side: ArgumentSide) => {
+    (
+      text: string,
+      side: ArgumentSide,
+      weight: ArgumentWeight,
+      optionKey?: DecisionOptionKey,
+    ) => {
       nextId.current += 1;
 
       const argument: Argument = {
         id: `${side}-${Date.now()}-${nextId.current}`,
         optionKey:
           decisionFormat === 'compare'
-            ? side === 'pro'
-              ? 'optionA'
-              : 'optionB'
+            ? optionKey
             : undefined,
         side,
         text,
+        weight,
       };
 
       setArgumentsList((current) => [
@@ -77,6 +126,23 @@ export function DecisionArgumentsScreen({ navigation, route }: Props) {
       current.filter((argument) => argument.id !== id),
     );
   }, []);
+
+  const updateArgument = useCallback(
+    (id: string, text: string, weight: ArgumentWeight) => {
+      setArgumentsList((current) =>
+        current.map((argument) =>
+          argument.id === id
+            ? {
+                ...argument,
+                text,
+                weight,
+              }
+            : argument,
+        ),
+      );
+    },
+    [],
+  );
 
   const goBack = () => {
     Keyboard.dismiss();
@@ -95,6 +161,42 @@ export function DecisionArgumentsScreen({ navigation, route }: Props) {
     () =>
       argumentsList.filter(
         (argument) => argument.side === 'con',
+      ),
+    [argumentsList],
+  );
+
+  const optionAPros = useMemo(
+    () =>
+      argumentsList.filter(
+        (argument) =>
+          argument.optionKey === 'optionA' && argument.side === 'pro',
+      ),
+    [argumentsList],
+  );
+
+  const optionACons = useMemo(
+    () =>
+      argumentsList.filter(
+        (argument) =>
+          argument.optionKey === 'optionA' && argument.side === 'con',
+      ),
+    [argumentsList],
+  );
+
+  const optionBPros = useMemo(
+    () =>
+      argumentsList.filter(
+        (argument) =>
+          argument.optionKey === 'optionB' && argument.side === 'pro',
+      ),
+    [argumentsList],
+  );
+
+  const optionBCons = useMemo(
+    () =>
+      argumentsList.filter(
+        (argument) =>
+          argument.optionKey === 'optionB' && argument.side === 'con',
       ),
     [argumentsList],
   );
@@ -126,6 +228,7 @@ const analyzeDecision = () => {
       `decision-${Date.now()}`,
 
     format: hasDecisionOptions ? 'compare' : 'evaluate',
+    argumentModelVersion: 2,
     title: decisionTitle,
 
     pros: proArguments,
@@ -179,13 +282,17 @@ const analyzeDecision = () => {
         style={styles.keyboardArea}
       >
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[
+            styles.scrollContent,
+            isKeyboardVisible && styles.scrollContentWithKeyboard,
+          ]}
           keyboardDismissMode={
             Platform.OS === 'ios'
               ? 'interactive'
               : 'on-drag'
           }
           keyboardShouldPersistTaps="handled"
+          ref={scrollViewRef}
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.screen}>
@@ -231,23 +338,87 @@ const analyzeDecision = () => {
 
   {hasOptions ? (
     <>
-      <ArgumentSection
-        argumentsList={proArguments}
-        onAdd={addArgument}
-        onRemove={removeArgument}
-        side="pro"
-        subtitle={`Ce qui soutient ${resolvedOptions?.optionA}`}
-        title={resolvedOptions?.optionA ?? 'Option A'}
-      />
+      <View style={styles.comparisonOptionCard}>
+        <Text style={styles.comparisonOptionLabel}>Option A</Text>
+        <Text style={styles.comparisonOptionName}>
+          {resolvedOptions?.optionA}
+        </Text>
 
-      <ArgumentSection
-        argumentsList={conArguments}
-        onAdd={addArgument}
-        onRemove={removeArgument}
-        side="con"
-        subtitle={`Ce qui soutient ${resolvedOptions?.optionB}`}
-        title={resolvedOptions?.optionB ?? 'Option B'}
-      />
+        <View style={styles.comparisonSections}>
+          <ArgumentSection
+            argumentsList={optionAPros}
+            embedded
+            onAdd={(text, side, weight) =>
+              addArgument(text, side, weight, 'optionA')
+            }
+            onRemove={removeArgument}
+            onFieldFocus={revealFocusedField}
+            onUpdate={updateArgument}
+            placeholder="Ajouter un atout"
+            side="pro"
+            subtitle="Ce que cette option vous apporte"
+            title="Atouts"
+          />
+
+          <View style={styles.comparisonDivider} />
+
+          <ArgumentSection
+            argumentsList={optionACons}
+            embedded
+            onAdd={(text, side, weight) =>
+              addArgument(text, side, weight, 'optionA')
+            }
+            onRemove={removeArgument}
+            onFieldFocus={revealFocusedField}
+            onUpdate={updateArgument}
+            placeholder="Ajouter un frein"
+            side="con"
+            subtitle="Ce qui peut poser problème"
+            title="Freins"
+          />
+        </View>
+      </View>
+
+      <View style={styles.comparisonOptionCard}>
+        <Text style={styles.comparisonOptionLabel}>Option B</Text>
+        <Text style={styles.comparisonOptionName}>
+          {resolvedOptions?.optionB}
+        </Text>
+
+        <View style={styles.comparisonSections}>
+          <ArgumentSection
+            argumentsList={optionBPros}
+            embedded
+            onAdd={(text, side, weight) =>
+              addArgument(text, side, weight, 'optionB')
+            }
+            onRemove={removeArgument}
+            onFieldFocus={revealFocusedField}
+            onUpdate={updateArgument}
+            placeholder="Ajouter un atout"
+            side="pro"
+            subtitle="Ce que cette option vous apporte"
+            title="Atouts"
+          />
+
+          <View style={styles.comparisonDivider} />
+
+          <ArgumentSection
+            argumentsList={optionBCons}
+            embedded
+            onAdd={(text, side, weight) =>
+              addArgument(text, side, weight, 'optionB')
+            }
+            onRemove={removeArgument}
+            onFieldFocus={revealFocusedField}
+            onUpdate={updateArgument}
+            placeholder="Ajouter un frein"
+            side="con"
+            subtitle="Ce qui peut poser problème"
+            title="Freins"
+          />
+        </View>
+      </View>
     </>
   ) : (
     <>
@@ -255,6 +426,8 @@ const analyzeDecision = () => {
         argumentsList={proArguments}
         onAdd={addArgument}
         onRemove={removeArgument}
+        onFieldFocus={revealFocusedField}
+        onUpdate={updateArgument}
         side="pro"
         subtitle="Ce qui vous pousse à dire oui"
         title="Pour"
@@ -264,6 +437,8 @@ const analyzeDecision = () => {
         argumentsList={conArguments}
         onAdd={addArgument}
         onRemove={removeArgument}
+        onFieldFocus={revealFocusedField}
+        onUpdate={updateArgument}
         side="con"
         subtitle="Ce qui vous fait hésiter"
         title="Contre"
@@ -323,6 +498,10 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
 
+  scrollContentWithKeyboard: {
+    paddingBottom: 220,
+  },
+
   screen: {
     width: '100%',
     maxWidth: layout.contentWidth,
@@ -378,6 +557,40 @@ const styles = StyleSheet.create({
   sections: {
     marginTop: 38,
     gap: 20,
+  },
+
+  comparisonOptionCard: {
+    padding: spacing.ml,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.lg,
+    backgroundColor: colors.white,
+  },
+
+  comparisonOptionLabel: {
+    color: colors.primary,
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
+  },
+
+  comparisonOptionName: {
+    marginTop: spacing.xs,
+    color: colors.text,
+    fontSize: 23,
+    fontWeight: '800',
+    lineHeight: 30,
+  },
+
+  comparisonSections: {
+    marginTop: spacing.lg,
+    gap: spacing.lg,
+  },
+
+  comparisonDivider: {
+    height: 1,
+    backgroundColor: colors.border,
   },
 
 

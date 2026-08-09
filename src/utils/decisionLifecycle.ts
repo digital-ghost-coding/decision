@@ -1,6 +1,7 @@
 import type {
   ActiveDecisionStatus,
   Decision,
+  DecisionSatisfaction,
   DecisionStatus,
 } from '../types/decision';
 
@@ -146,6 +147,87 @@ export function transitionDecision(
     updatedAt,
   };
 
+}
+
+
+
+export function completeDecisionFromReview(
+  decision: Decision,
+  satisfaction: DecisionSatisfaction,
+  reviewNote?: string,
+  completedOn = new Date(),
+): Decision {
+  if (!['acted', 'tracking', 'completed'].includes(decision.status)) {
+    throw new Error(
+      `Bilan impossible pour une décision au statut ${decision.status}`,
+    );
+  }
+
+  const updatedAt = completedOn.toISOString();
+  const completedDecision =
+    decision.status === 'completed'
+      ? decision
+      : transitionDecision(decision, 'completed');
+
+  return {
+    ...completedDecision,
+    completedAt: decision.completedAt ?? updatedAt,
+    reviewNote: reviewNote?.trim() || undefined,
+    satisfaction,
+    status: 'completed',
+    updatedAt,
+  };
+}
+
+
+
+export function scheduleDecisionFollowUp(
+  decision: Decision,
+  trackingDate: string,
+  updatedOn = new Date(),
+): Decision {
+  if (!['acted', 'tracking'].includes(decision.status)) {
+    throw new Error(
+      `Suivi impossible pour une décision au statut ${decision.status}`,
+    );
+  }
+
+  const trackingDecision =
+    decision.status === 'tracking'
+      ? decision
+      : transitionDecision({ ...decision, trackingDate }, 'tracking');
+
+  return {
+    ...trackingDecision,
+    trackingDate,
+    status: 'tracking',
+    updatedAt: updatedOn.toISOString(),
+  };
+}
+
+
+
+export function removeDecisionFollowUp(
+  decision: Decision,
+  updatedOn = new Date(),
+): Decision {
+  if (!['acted', 'tracking'].includes(decision.status)) {
+    throw new Error(
+      `Suppression du suivi impossible pour le statut ${decision.status}`,
+    );
+  }
+
+  const actedDecision =
+    decision.status === 'tracking'
+      ? transitionDecision({ ...decision, trackingDate: undefined }, 'acted')
+      : decision;
+
+  return {
+    ...actedDecision,
+    status: 'acted',
+    trackingDate: undefined,
+    updatedAt: updatedOn.toISOString(),
+  };
 }
 
 

@@ -3,7 +3,15 @@ import { useFocusEffect } from '@react-navigation/native';
 import type { CompositeScreenProps } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  createRef,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type RefObject,
+} from 'react';
 import {
   ActivityIndicator,
   Platform,
@@ -20,7 +28,10 @@ import { AppIcon } from '../components/AppIcon';
 import { FadeInView } from '../components/FadeInView';
 import { InAppNotification } from '../components/InAppNotification';
 import { PrimaryButton } from '../components/PrimaryButton';
-import { SwipeableDecisionRow } from '../components/SwipeableDecisionRow';
+import {
+  SwipeableDecisionRow,
+  type SwipeableDecisionRowHandle,
+} from '../components/SwipeableDecisionRow';
 import {
   archiveDecision,
   deleteDecision,
@@ -35,7 +46,6 @@ import type {
   RootStackParamList,
 } from '../types/navigation';
 import { createAppNotification } from '../types/notification';
-import { transitionDecision } from '../utils/decisionLifecycle';
 
 type Props = CompositeScreenProps<
   BottomTabScreenProps<MainTabParamList, 'DecisionList'>,
@@ -62,8 +72,12 @@ const filters: { id: DecisionFilter; label: string }[] = [
   { id: 'archived', label: 'Archivées' },
 ];
 
+const DECISION_HIGHLIGHT_DURATION_MS = 2800;
+
 export function DecisionListScreen({ navigation, route }: Props) {
   const routeNotification = route.params?.notification;
+  const routeFilter = route.params?.filter;
+  const routeHighlightedDecisionId = route.params?.highlightedDecisionId;
   const [decisions, setDecisions] = useState<Decision[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<DecisionFilter>('all');
@@ -71,8 +85,59 @@ export function DecisionListScreen({ navigation, route }: Props) {
   const [notification, setNotification] =
     useState<ActionNotification | null>(null);
   const [isNotificationVisible, setIsNotificationVisible] = useState(false);
+  const [highlightedDecisionId, setHighlightedDecisionId] =
+    useState<string | null>(null);
+
+  const rowRefs = useRef(
+    new Map<string, RefObject<SwipeableDecisionRowHandle | null>>(),
+  );
+  const openRowId = useRef<string | null>(null);
+  const highlightTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const getRowRef = useCallback((decisionId: string) => {
+    const existingRef = rowRefs.current.get(decisionId);
+
+    if (existingRef) {
+      return existingRef;
+    }
+
+    const nextRef = createRef<SwipeableDecisionRowHandle>();
+    rowRefs.current.set(decisionId, nextRef);
+    return nextRef;
+  }, []);
+
+  const closeOpenRow = useCallback((animated = true) => {
+    const decisionId = openRowId.current;
+
+    if (!decisionId) {
+      return;
+    }
+
+    rowRefs.current.get(decisionId)?.current?.close(animated);
+    openRowId.current = null;
+  }, []);
+
+  const handleRowWillOpen = useCallback(
+    (decisionId: string) => {
+      const previousId = openRowId.current;
+
+      if (previousId && previousId !== decisionId) {
+        rowRefs.current.get(previousId)?.current?.close();
+      }
+
+      openRowId.current = decisionId;
+    },
+    [],
+  );
+
+  const handleRowDidClose = useCallback((decisionId: string) => {
+    if (openRowId.current === decisionId) {
+      openRowId.current = null;
+    }
+  }, []);
 
   const loadDecisions = useCallback(async () => {
+    closeOpenRow(false);
     setIsLoading(true);
     setLoadError(null);
 
@@ -83,7 +148,7 @@ export function DecisionListScreen({ navigation, route }: Props) {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [closeOpenRow]);
 
   const showNotification = useCallback(
     (nextNotification: ActionNotification) => {
@@ -163,10 +228,14 @@ export function DecisionListScreen({ navigation, route }: Props) {
                       decisionId: routeAction.relatedDecisionId,
                     });
                   }
+                : routeAction?.type === 'view-journey'
+                  ? () => navigation.navigate('Journey')
                 : undefined,
       });
+      navigation.setParams({ notification: undefined });
     }
   }, [
+    navigation,
     restorePreviousStatus,
     openDecisionById,
     routeNotification?.id,
@@ -174,11 +243,90 @@ export function DecisionListScreen({ navigation, route }: Props) {
     showNotification,
   ]);
 
+  useEffect(() => {
+    let consumedTemporaryParams = false;
+
+    if (routeFilter) {
+      setFilter(routeFilter);
+      consumedTemporaryParams = true;
+    }
+
+    if (routeHighlightedDecisionId) {
+      setHighlightedDecisionId(routeHighlightedDecisionId);
+      consumedTemporaryParams = true;
+    }
+
+    if (consumedTemporaryParams) {
+      navigation.setParams({
+        filter: undefined,
+        highlightedDecisionId: undefined,
+      });
+    }
+  }, [navigation, routeFilter, routeHighlightedDecisionId]);
+
+  useEffect(() => {
+    const highlightedDecisionExists = decisions.some(
+      (decision) => decision.id === highlightedDecisionId,
+    );
+
+    if (highlightedDecisionId && !isLoading && !highlightedDecisionExists) {
+      setHighlightedDecisionId(null);
+      return;
+    }
+
+    if (
+      !highlightedDecisionId ||
+      isLoading ||
+      !highlightedDecisionExists ||
+      highlightTimeout.current
+    ) {
+      return;
+    }
+
+    highlightTimeout.current = setTimeout(() => {
+      setHighlightedDecisionId(null);
+      highlightTimeout.current = null;
+    }, DECISION_HIGHLIGHT_DURATION_MS);
+  }, [decisions, highlightedDecisionId, isLoading]);
+
+  useEffect(
+    () => () => {
+      if (highlightTimeout.current) {
+        clearTimeout(highlightTimeout.current);
+      }
+    },
+    [],
+  );
+
   useFocusEffect(
     useCallback(() => {
+      closeOpenRow(false);
       void loadDecisions();
-    }, [loadDecisions]),
+
+      return () => {
+        closeOpenRow(false);
+      };
+    }, [closeOpenRow, loadDecisions]),
   );
+
+  useEffect(() => {
+    const visibleDecisionIds = new Set(
+      decisions.map((decision) => decision.id),
+    );
+
+    if (
+      openRowId.current &&
+      !visibleDecisionIds.has(openRowId.current)
+    ) {
+      closeOpenRow(false);
+    }
+
+    rowRefs.current.forEach((_, decisionId) => {
+      if (!visibleDecisionIds.has(decisionId)) {
+        rowRefs.current.delete(decisionId);
+      }
+    });
+  }, [closeOpenRow, decisions]);
 
   const undoRemoval = useCallback(async (decision: Decision) => {
     await saveDecision({
@@ -258,50 +406,14 @@ export function DecisionListScreen({ navigation, route }: Props) {
     }
   }, [showNotification, undoRemoval]);
 
-  const handleComplete = useCallback(async (decision: Decision) => {
-    try {
-      const completedDecision = transitionDecision(decision, 'completed');
-      await saveDecision(completedDecision);
-      setDecisions((current) =>
-        current.map((item) =>
-          item.id === completedDecision.id ? completedDecision : item,
-        ),
-      );
-      showNotification({
-        ...createAppNotification({
-          action: {
-            decision,
-            label: 'Annuler',
-            type: 'restore-decision',
-          },
-          message: 'Son retour d’expérience pourra être ajouté plus tard.',
-          relatedDecisionId: decision.id,
-          title: 'Décision terminée',
-          type: 'decision_status',
-        }),
-        actionLabel: 'Annuler',
-        onAction: () => {
-          void restorePreviousStatus(decision);
-        },
-      });
-    } catch {
-      showNotification({
-        ...createAppNotification({
-          message: 'Le statut n’a pas été modifié.',
-          title: 'Mise à jour impossible',
-          type: 'decision_status',
-        }),
-      });
-    }
-  }, [restorePreviousStatus, showNotification]);
-
   const openDecision = useCallback(
   (decision: Decision) => {
+    closeOpenRow(false);
     navigation.navigate('DecisionDetail', {
       decisionId: decision.id,
     });
   },
-  [navigation],
+  [closeOpenRow, navigation],
 );
 
   const filteredDecisions = useMemo(() => {
@@ -385,7 +497,10 @@ export function DecisionListScreen({ navigation, route }: Props) {
             <AnimatedPressable
               accessibilityLabel="Ouvrir les archives"
               accessibilityRole="button"
-              onPress={() => navigation.navigate('Archives')}
+              onPress={() => {
+                closeOpenRow(false);
+                navigation.navigate('Archives');
+              }}
               pressedStyle={styles.archiveButtonPressed}
               scaleTo={motion.subtlePressScale}
               style={[
@@ -449,7 +564,10 @@ export function DecisionListScreen({ navigation, route }: Props) {
                           accessibilityRole="tab"
                           accessibilityState={{ selected }}
                           key={item.id}
-                          onPress={() => setFilter(item.id)}
+                          onPress={() => {
+                            closeOpenRow();
+                            setFilter(item.id);
+                          }}
                           pressedStyle={styles.filterPressed}
                           style={[
                             styles.filter,
@@ -487,10 +605,15 @@ export function DecisionListScreen({ navigation, route }: Props) {
               renderItem={({ index, item }) => (
                 <FadeInView
                   delay={Math.min(index, 5) * 35}
-                  style={styles.decisionRow}
+                  style={[
+                    styles.decisionRow,
+                    highlightedDecisionId === item.id &&
+                      styles.decisionRowHighlighted,
+                  ]}
                 >
                   <SwipeableDecisionRow
                     decision={item}
+                    ref={getRowRef(item.id)}
                     onArchive={
                       item.status === 'archived' ||
                       item.status === 'completed'
@@ -498,17 +621,24 @@ export function DecisionListScreen({ navigation, route }: Props) {
                         : handleArchive
                     }
                     onDelete={handleDelete}
+                    onDidClose={handleRowDidClose}
                     onOpen={
                       openDecision
                     }
+                    onWillOpen={handleRowWillOpen}
                   />
                   {['acted', 'tracking'].includes(item.status) ? (
                     <AnimatedPressable
-                      accessibilityHint="Passe la décision au statut terminé. Cette action peut être annulée pendant quelques secondes."
-                      accessibilityLabel={`Marquer ${item.title} comme terminée`}
+                      accessibilityHint="Ouvre le bilan avant de terminer cette décision."
+                      accessibilityLabel={`Faire le bilan de ${item.title}`}
                       accessibilityRole="button"
                       haptic="selection"
-                      onPress={() => void handleComplete(item)}
+                      onPress={() => {
+                        closeOpenRow(false);
+                        navigation.navigate('DecisionReview', {
+                          decisionId: item.id,
+                        });
+                      }}
                       pressedStyle={styles.completeButtonPressed}
                       scaleTo={motion.subtlePressScale}
                       style={[
@@ -523,7 +653,7 @@ export function DecisionListScreen({ navigation, route }: Props) {
                         weight="medium"
                       />
                       <Text style={styles.completeButtonLabel}>
-                        Marquer comme terminée
+                        Faire le bilan
                       </Text>
                     </AnimatedPressable>
                   ) : null}
@@ -534,6 +664,7 @@ export function DecisionListScreen({ navigation, route }: Props) {
                   {section.title}
                 </Text>
               )}
+              onScrollBeginDrag={() => closeOpenRow()}
               showsVerticalScrollIndicator={false}
               stickySectionHeadersEnabled={false}
               style={styles.list}
@@ -638,6 +769,13 @@ const styles = StyleSheet.create({
   },
   decisionRow: {
     marginBottom: 14,
+  },
+  decisionRowHighlighted: {
+    padding: spacing.xs,
+    borderWidth: 1.5,
+    borderColor: colors.success,
+    borderRadius: radii.card,
+    backgroundColor: colors.successSoft,
   },
   completeButton: {
     minHeight: layout.touchTarget,

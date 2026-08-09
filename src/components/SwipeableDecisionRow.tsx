@@ -1,4 +1,12 @@
-import { memo, useCallback, useMemo, useRef } from 'react';
+import {
+  forwardRef,
+  memo,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+} from 'react';
 import {
   Animated,
   PanResponder,
@@ -9,22 +17,33 @@ import {
 } from 'react-native';
 
 import { decisionStatusPresentation } from '../constants/decisionStatus';
+import { useReducedMotion } from '../hooks/useReducedMotion';
 import type { Decision } from '../types/decision';
 import { colors, motion, radii, shadows, spacing } from '../theme';
+import {
+  getDecisionSwipeTarget,
+  shouldCaptureDecisionSwipe,
+} from '../utils/swipeDecisionGesture';
 import { AppIcon } from './AppIcon';
 import { AnimatedPressable } from './AnimatedPressable';
 
 
 const ACTION_WIDTH = 92;
-const SWIPE_ACTIVATION_DISTANCE = 8;
-const SWIPE_CAPTURE_DISTANCE = 10;
+const SWIPE_CAPTURE_DISTANCE = 14;
+
+export type SwipeableDecisionRowHandle = {
+  close: (animated?: boolean) => void;
+  isOpen: () => boolean;
+};
 
 
 type Props = {
   decision: Decision;
   onArchive?: (decision: Decision) => void;
   onDelete: (decision: Decision) => void;
+  onDidClose?: (decisionId: string) => void;
   onOpen: (decision: Decision) => void;
+  onWillOpen?: (decisionId: string) => void;
 };
 
 
@@ -62,12 +81,17 @@ function getSubtitle(decision: Decision) {
 
 
 
-function SwipeableDecisionRowComponent({
+const SwipeableDecisionRowComponent = forwardRef<
+  SwipeableDecisionRowHandle,
+  Props
+>(function SwipeableDecisionRowComponent({
   decision,
   onArchive,
   onDelete,
+  onDidClose,
   onOpen,
-}: Props) {
+  onWillOpen,
+}, ref) {
 
   const translateX =
     useRef(new Animated.Value(0)).current;
@@ -83,6 +107,13 @@ function SwipeableDecisionRowComponent({
 
   const isOpen =
     useRef(false);
+
+
+  const activeAnimation =
+    useRef<Animated.CompositeAnimation | null>(null);
+
+
+  const reduceMotion = useReducedMotion();
 
 
 
@@ -109,27 +140,57 @@ function SwipeableDecisionRowComponent({
 
 
   const settle = useCallback(
-    (value: number) => {
+    (value: number, animated = true) => {
 
-      Animated.spring(
+      activeAnimation.current?.stop();
+      activeAnimation.current = null;
+      translateX.stopAnimation();
+      isOpen.current = value !== 0;
+
+      const finish = () => {
+        translateX.setValue(value);
+        isOpen.current = value !== 0;
+
+        if (value === 0) {
+          onDidClose?.(decision.id);
+        }
+      };
+
+      if (!animated || reduceMotion) {
+        finish();
+        return;
+      }
+
+      const animation = Animated.spring(
         translateX,
         {
           ...motion.spring,
           toValue: value,
           useNativeDriver: true,
         },
-      ).start(() => {
-        isOpen.current = value !== 0;
+      );
+
+      activeAnimation.current = animation;
+      animation.start(({ finished }) => {
+        if (activeAnimation.current !== animation) {
+          return;
+        }
+
+        activeAnimation.current = null;
+
+        if (finished) {
+          finish();
+        }
       });
 
     },
-    [translateX],
+    [decision.id, onDidClose, reduceMotion, translateX],
   );
 
 
 
   const close = useCallback(
-    () => settle(0),
+    (animated = true) => settle(0, animated),
     [settle],
   );
 
@@ -144,6 +205,29 @@ function SwipeableDecisionRowComponent({
   );
 
 
+  useImperativeHandle(
+    ref,
+    () => ({
+      close,
+      isOpen: () => isOpen.current,
+    }),
+    [close],
+  );
+
+
+  useEffect(() => {
+    close(false);
+
+    return () => {
+      activeAnimation.current?.stop();
+      activeAnimation.current = null;
+      translateX.stopAnimation();
+      translateX.setValue(0);
+      isOpen.current = false;
+    };
+  }, [actionsWidth, close, translateX]);
+
+
 
   const panResponder = useMemo(
     () =>
@@ -153,11 +237,10 @@ function SwipeableDecisionRowComponent({
           _,
           gesture,
         ) {
-          return (
-            Math.abs(gesture.dx) >
-              SWIPE_ACTIVATION_DISTANCE &&
-            Math.abs(gesture.dx) >
-              Math.abs(gesture.dy)
+          return shouldCaptureDecisionSwipe(
+            gesture.dx,
+            gesture.dy,
+            isOpen.current,
           );
         },
 
@@ -165,7 +248,11 @@ function SwipeableDecisionRowComponent({
         onPanResponderGrant() {
 
           didSwipe.current = false;
+          onWillOpen?.(decision.id);
 
+
+          activeAnimation.current?.stop();
+          activeAnimation.current = null;
 
           translateX.stopAnimation(
             value => {
@@ -212,26 +299,40 @@ function SwipeableDecisionRowComponent({
             gesture.dx;
 
 
-          const shouldOpen =
-            current <
-              -(actionsWidth / 2) ||
-            gesture.vx < -0.5;
+          const target = getDecisionSwipeTarget(
+            current,
+            gesture.vx,
+            actionsWidth,
+          );
 
 
-          shouldOpen
+          target === -actionsWidth
             ? open()
             : close();
+
+          requestAnimationFrame(() => {
+            didSwipe.current = false;
+          });
 
         },
 
 
-        onPanResponderTerminate:
-          close,
+        onPanResponderTerminate() {
+          close();
+          didSwipe.current = false;
+        },
+
+
+        onPanResponderTerminationRequest() {
+          return true;
+        },
 
       }),
     [
       actionsWidth,
       close,
+      decision.id,
+      onWillOpen,
       open,
       translateX,
     ],
@@ -244,12 +345,8 @@ function SwipeableDecisionRowComponent({
       action: (decision: Decision) => void,
     ) => {
 
-      close();
-
-      setTimeout(
-        () => action(decision),
-        120,
-      );
+      close(false);
+      action(decision);
 
     },
     [
@@ -494,7 +591,7 @@ function SwipeableDecisionRowComponent({
 
     </View>
   );
-}
+});
 
 
 

@@ -2,10 +2,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import type {
   AppNotification,
+  AppNotificationAction,
   AppNotificationType,
 } from '../types/notification';
+import type { Decision } from '../types/decision';
 
 const NOTIFICATIONS_STORAGE_KEY = '@decisionly/notifications/v1';
+const notificationChangeListeners = new Set<() => void>();
 
 const notificationTypes: AppNotificationType[] = [
   'decision_status',
@@ -16,6 +19,65 @@ const notificationTypes: AppNotificationType[] = [
   'insight',
   'reminder',
 ];
+
+function normalizeNotificationAction(
+  value: unknown,
+): AppNotificationAction | undefined {
+  if (!value || typeof value !== 'object') {
+    return undefined;
+  }
+
+  const action = value as Record<string, unknown>;
+
+  if (
+    action.type === 'restore-decision' &&
+    action.label === 'Annuler' &&
+    action.decision &&
+    typeof action.decision === 'object'
+  ) {
+    return {
+      decision: action.decision as Decision,
+      label: 'Annuler',
+      type: 'restore-decision',
+    };
+  }
+
+  if (
+    action.type === 'view-decision' &&
+    action.label === 'Voir la décision' &&
+    typeof action.relatedDecisionId === 'string'
+  ) {
+    return {
+      label: 'Voir la décision',
+      relatedDecisionId: action.relatedDecisionId,
+      type: 'view-decision',
+    };
+  }
+
+  if (
+    action.type === 'review-decision' &&
+    action.label === 'Faire le bilan' &&
+    typeof action.relatedDecisionId === 'string'
+  ) {
+    return {
+      label: 'Faire le bilan',
+      relatedDecisionId: action.relatedDecisionId,
+      type: 'review-decision',
+    };
+  }
+
+  if (
+    action.type === 'view-journey' &&
+    action.label === 'Voir ma progression'
+  ) {
+    return {
+      label: 'Voir ma progression',
+      type: 'view-journey',
+    };
+  }
+
+  return undefined;
+}
 
 function normalizeNotification(value: unknown): AppNotification | null {
   if (!value || typeof value !== 'object') {
@@ -41,7 +103,7 @@ function normalizeNotification(value: unknown): AppNotification | null {
     message: notification.message,
     createdAt: notification.createdAt,
     read: notification.read,
-    action: notification.action,
+    action: normalizeNotificationAction(notification.action),
     dedupeKey:
       typeof notification.dedupeKey === 'string'
         ? notification.dedupeKey
@@ -93,6 +155,16 @@ async function saveNotifications(notifications: AppNotification[]) {
     NOTIFICATIONS_STORAGE_KEY,
     JSON.stringify(sortByMostRecent(notifications)),
   );
+
+  notificationChangeListeners.forEach((listener) => listener());
+}
+
+export function subscribeToNotificationChanges(listener: () => void) {
+  notificationChangeListeners.add(listener);
+
+  return () => {
+    notificationChangeListeners.delete(listener);
+  };
 }
 
 export async function addNotifications(

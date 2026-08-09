@@ -12,7 +12,7 @@ import { SecondaryButton } from '../components/SecondaryButton';
 import { colors, layout, radii, spacing } from '../theme';
 import type { RootStackParamList } from '../types/navigation';
 import { calculateDecisionScore } from '../utils/calculateDecisionScore';
-import { getDecisions } from '../storage/decisionStorage';
+import { getDecisions, saveDecision } from '../storage/decisionStorage';
 import type { Decision } from '../types/decision';
 
 
@@ -43,6 +43,7 @@ export function DecisionResultScreen({
 }: Props) {
 
   const [decision, setDecision] = useState(route.params.decision);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const loadFreshDecision = useCallback(async () => {
     const decisions = await getDecisions();
@@ -79,12 +80,14 @@ export function DecisionResultScreen({
 
 
   const isBalanced =
-    score.trend === 'neutral';
+    hasOptions
+      ? score.comparison?.result === 'tie'
+      : score.trend === 'neutral';
 
 
   const optionAWins =
     hasOptions &&
-    score.proCount > score.conCount;
+    score.comparison?.result === 'optionA';
 
 
   const winningOption = optionAWins
@@ -95,6 +98,35 @@ export function DecisionResultScreen({
   const otherOption = optionAWins
     ? optionB
     : optionA;
+
+  const continueReflecting = async () => {
+    setSaveError(null);
+
+    try {
+      await saveDecision({
+        ...decision,
+        chosenOption: undefined,
+        status: 'reflecting',
+        updatedAt: new Date().toISOString(),
+      });
+
+      navigation.reset({
+        index: 0,
+        routes: [
+          {
+            name: 'MainTabs',
+            params: {
+              screen: 'DecisionList',
+            },
+          },
+        ],
+      });
+    } catch {
+      setSaveError(
+        'Impossible d’enregistrer cette réflexion. Veuillez réessayer.',
+      );
+    }
+  };
 
 
 
@@ -368,6 +400,19 @@ const displayTitle = getDisplayTitle(decision);
 
             )}
 
+            {hasOptions ? (
+              <SecondaryButton
+                label="Je souhaite encore réfléchir"
+                onPress={() => void continueReflecting()}
+              />
+            ) : null}
+
+            {saveError ? (
+              <Text accessibilityRole="alert" style={styles.errorText}>
+                {saveError}
+              </Text>
+            ) : null}
+
 
 
           </FadeInView>
@@ -516,6 +561,13 @@ const styles = StyleSheet.create({
 
   choiceColumn:{
     flexDirection:'column',
+  },
+
+  errorText: {
+    color: colors.danger,
+    fontSize: 13,
+    lineHeight: 19,
+    textAlign: 'center',
   },
 
 

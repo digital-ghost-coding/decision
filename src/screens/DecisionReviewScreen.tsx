@@ -24,7 +24,7 @@ import { markDecisionFollowUpsRead } from '../storage/notificationStorage';
 import { colors, layout, motion, radii, shadows, spacing } from '../theme';
 import type { Decision, DecisionSatisfaction } from '../types/decision';
 import type { RootStackParamList } from '../types/navigation';
-import { transitionDecision } from '../utils/decisionLifecycle';
+import { completeDecisionFromReview } from '../utils/decisionLifecycle';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'DecisionReview'>;
 
@@ -95,16 +95,11 @@ export function DecisionReviewScreen({ navigation, route }: Props) {
     Keyboard.dismiss();
 
     try {
-      const completedDecision =
-        decision.status === 'completed'
-          ? { ...decision, updatedAt: new Date().toISOString() }
-          : transitionDecision(decision, 'completed');
-      const nextDecision: Decision = {
-        ...completedDecision,
-        completedAt: completedDecision.completedAt ?? new Date().toISOString(),
-        reviewNote: note.trim() || undefined,
+      const nextDecision = completeDecisionFromReview(
+        decision,
         satisfaction,
-      };
+        note,
+      );
 
       await saveDecision(nextDecision);
       await markDecisionFollowUpsRead(nextDecision.id);
@@ -165,10 +160,22 @@ export function DecisionReviewScreen({ navigation, route }: Props) {
           </FadeInView>
           <FadeInView delay={100} style={styles.completeAction}>
             <PrimaryButton
-              label="Voir ma décision"
+              label="Retour à mes décisions"
               onPress={() =>
-                navigation.replace('DecisionDetail', {
-                  decisionId: decision.id,
+                navigation.reset({
+                  index: 0,
+                  routes: [
+                    {
+                      name: 'MainTabs',
+                      params: {
+                        screen: 'DecisionList',
+                        params: {
+                          filter: 'completed',
+                          highlightedDecisionId: decision.id,
+                        },
+                      },
+                    },
+                  ],
                 })
               }
             />
@@ -200,13 +207,25 @@ export function DecisionReviewScreen({ navigation, route }: Props) {
             />
 
             <FadeInView style={styles.header}>
-              <Text style={styles.eyebrow}>Faire le bilan</Text>
+              <Text style={styles.eyebrow}>
+                {decision.status === 'completed' && !decision.satisfaction
+                  ? 'Ajouter un bilan'
+                  : 'Faire le bilan'}
+              </Text>
               <Text accessibilityRole="header" style={styles.title}>
                 Comment cette décision s’est-elle passée ?
               </Text>
               <Text numberOfLines={2} style={styles.decisionTitle}>
                 {decision.title}
               </Text>
+              {decision.chosenOption ? (
+                <View style={styles.chosenOptionCard}>
+                  <Text style={styles.chosenOptionLabel}>Choix acté</Text>
+                  <Text style={styles.chosenOptionValue}>
+                    {decision.chosenOption}
+                  </Text>
+                </View>
+              ) : null}
             </FadeInView>
 
             <FadeInView delay={70} style={styles.options}>
@@ -344,6 +363,26 @@ const styles = StyleSheet.create({
     fontSize: 17,
     lineHeight: 25,
   },
+  chosenOptionCard: {
+    marginTop: spacing.md,
+    padding: spacing.base,
+    borderRadius: radii.md,
+    backgroundColor: colors.successSoft,
+  },
+  chosenOptionLabel: {
+    color: colors.success,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
+  },
+  chosenOptionValue: {
+    marginTop: spacing.xs,
+    color: colors.text,
+    fontSize: 17,
+    fontWeight: '800',
+    lineHeight: 23,
+  },
   options: { marginTop: spacing.xl, gap: spacing.sm },
   option: {
     minHeight: 64,
@@ -464,4 +503,3 @@ const styles = StyleSheet.create({
   completeAction: { paddingTop: spacing.lg },
   webButton: { cursor: 'pointer' },
 });
-

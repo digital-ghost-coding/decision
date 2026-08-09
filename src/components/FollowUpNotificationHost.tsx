@@ -3,7 +3,10 @@ import { useCallback, useEffect, useState } from 'react';
 import { AppState } from 'react-native';
 
 import { syncDueFollowUpNotifications } from '../services/followUpService';
-import { markNotificationRead } from '../storage/notificationStorage';
+import {
+  markNotificationRead,
+  subscribeToNotificationChanges,
+} from '../storage/notificationStorage';
 import type { RootStackParamList } from '../types/navigation';
 import type { AppNotification } from '../types/notification';
 import { InAppNotification } from './InAppNotification';
@@ -33,13 +36,21 @@ export function FollowUpNotificationHost({ navigationRef }: Props) {
   useEffect(() => {
     void refresh();
 
+    const unsubscribeFromNotificationChanges =
+      subscribeToNotificationChanges(() => {
+        void refresh();
+      });
+
     const subscription = AppState.addEventListener('change', (state) => {
       if (state === 'active') {
         void refresh();
       }
     });
 
-    return () => subscription.remove();
+    return () => {
+      subscription.remove();
+      unsubscribeFromNotificationChanges();
+    };
   }, [refresh]);
 
   if (!notification) {

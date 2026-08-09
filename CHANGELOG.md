@@ -2,6 +2,218 @@
 
 Toutes les évolutions notables du produit sont conservées dans ce fichier.
 
+## [Non publié] — Boucle Acter → Suivre → Apprendre — 2026-08-09
+
+### État réel avant modification
+
+- Après le cercle, les quatre échéances et « Je choisirai plus tard » apparaissaient immédiatement.
+- « Je choisirai plus tard » conservait `acted` sans `trackingDate`, mais pouvait aussi supprimer silencieusement une échéance existante.
+- Aucune date personnalisée n'était disponible.
+- Mes décisions et la fiche d'une décision en suivi pouvaient attribuer directement `completed` sans bilan.
+- Après le bilan, « Voir ma décision » ouvrait la fiche au lieu de revenir à la mémoire des décisions.
+- La notification « Décision actée » proposait « Voir la décision » alors que l'utilisateur se trouvait déjà dans Mes décisions.
+- Le filtre « Terminées » et la présentation du statut existaient, mais la navigation ne pouvait ni demander ce filtre ni mettre une décision précise en évidence.
+
+### Intention de suivi clarifiée
+
+- L'écran existant demande d'abord « Souhaitez-vous faire le point plus tard ? ».
+- « Oui, choisir un moment » révèle progressivement les quatre raccourcis et « Choisir une date ».
+- « Pas maintenant » sauvegarde une décision `acted`, sans `trackingDate`, en conservant `actedAt` et le choix concret.
+- Une date validée sauvegarde `trackingDate` et place la décision en `tracking`.
+- L'action principale devient « Planifier ce suivi » et reste désactivée sans date future.
+
+### Date personnalisée
+
+- Calendrier compact commun à iOS, Android et Web, sans nouvelle dépendance et sans modale plein écran.
+- Navigation entre les mois et les années, jours passés et jour courant désactivés, confirmation et annulation explicites.
+- Construction du jour en heure locale à midi avant sérialisation ISO : aucune chaîne `AAAA-MM-JJ` n'est analysée implicitement en UTC.
+- Les raccourcis conservent le bornage au dernier jour du mois cible.
+
+### Modification et suppression
+
+- « Modifier le suivi » affiche la date actuelle et permet un autre raccourci ou une autre date.
+- « Supprimer ce suivi » efface `trackingDate`, revient à `acted` et conserve `actedAt`, le choix et la décision.
+- Les notifications d'échéance précédentes sont marquées comme lues après planification, modification, suppression ou bilan.
+- L'hôte de notification réagit immédiatement aux changements du stockage afin qu'une ancienne échéance déjà affichée ne reste pas active.
+
+### Toutes les fins passent par le bilan
+
+- Les actions directes « Marquer comme terminée » et « Terminer » ont été retirées.
+- Mes décisions propose « Faire le bilan » pour `acted` et `tracking`.
+- La fiche conserve « Faire le bilan » et « Modifier le suivi » selon le statut.
+- La clôture utilisée par l'interface est centralisée dans `completeDecisionFromReview`, qui enregistre satisfaction, note facultative, `completedAt` et statut `completed`.
+- Une ancienne décision déjà `completed` sans satisfaction garde son statut et sa date, avec l'action « Ajouter un bilan ».
+
+### Retour après le bilan
+
+- « Retour à mes décisions » remplace « Voir ma décision ».
+- La navigation réinitialise la pile, ouvre le filtre « Terminées » et transmet une seule fois l'identifiant concerné.
+- La décision, remontée par son `updatedAt`, reçoit une bordure et un fond doux pendant 2,8 secondes.
+- Les paramètres temporaires sont nettoyés afin que l'effet ne se répète pas.
+
+### Notifications
+
+- « Décision actée » propose désormais « Voir ma progression » et ouvre Parcours.
+- Le nouveau type d'action `view-journey` est compris par la navigation et par la normalisation du stockage.
+- Les anciennes actions `view-decision` restent lisibles pour la compatibilité.
+- Une action inconnue stockée est ignorée au lieu de faire planter l'application.
+- La notification d'échéance conserve « Il est temps de refaire le point » et « Faire le bilan » vers `DecisionReviewScreen`.
+
+### Migration et compatibilité
+
+- Aucune clé de stockage, version Expo ou structure de décision n'est modifiée.
+- Aucune migration destructive n'est nécessaire.
+- Les normalisations progressives existantes et les décisions historiques terminées sans bilan sont conservées.
+
+### Validation technique actuelle
+
+- Typecheck TypeScript réussi.
+- Quinze tests automatisés rejouables couvrent les quatre raccourcis, les dates futures, le fuseau local, les fins de mois, le changement d'année, les transitions de suivi et la clôture par le bilan.
+- Aucun script lint n'est configuré dans le projet.
+- Expo Doctor réussi : 18 contrôles sur 18.
+- Bundles de production Web, iOS et Android générés avec succès.
+- Le serveur Web local a répondu et son bundle de développement a été généré ; aucun navigateur n'était disponible pour un test interactif.
+- Decisionly a été compilé et ouvert dans Expo Go sur l'iPhone 17 Pro Max simulé. L'écran d'accueil d'Expo Go est resté au premier plan et l'automatisation des touches était interdite par macOS : aucun scénario fonctionnel iOS n'est revendiqué.
+- Aucun émulateur Android n'était disponible, car `adb` n'est pas installé.
+
+### Limites ouvertes
+
+- Parcours complet non exécuté dans une interface réelle à ce stade.
+- Annulation du calendrier, boutons Retour et mise en évidence à valider visuellement.
+- Absence de doublon à confirmer après plusieurs changements réels d'échéance.
+- Validations Web, appareils iOS/Android, accessibilité et test utilisateur encore ouvertes.
+
+## [Non publié] — Stabilité UX du swipe et du clavier — 2026-08-09
+
+### Cause identifiée
+
+- Chaque `SwipeableDecisionRow` conservait seule sa translation et son état ouvert dans des références locales.
+- `DecisionListScreen` ne connaissait pas la carte ouverte et ne pouvait donc pas la fermer lors d'un scroll, d'un filtre ou d'une perte de focus.
+- Plusieurs ressorts `Animated.spring` pouvaient se succéder sans arrêt centralisé ni remise à zéro explicite au démontage.
+- Le seuil horizontal, trop proche du mouvement vertical, pouvait capturer un scroll légèrement diagonal.
+- Les champs d'arguments ne transmettaient aucune position au `ScrollView` : `KeyboardAvoidingView` réduisait la zone, mais ne garantissait pas la visibilité du dernier champ ou de ses actions.
+
+### Architecture retenue
+
+- Interface impérative `SwipeableDecisionRowHandle` avec `close()` et `isOpen()`.
+- Références stables conservées par la liste et identifiant unique de la carte ouverte.
+- Fermeture de la carte précédente dès qu'un nouveau geste horizontal commence.
+- Arrêt de toute animation précédente avant un nouveau ressort et nettoyage au démontage.
+- Fonctions pures isolant la capture horizontale et la destination finale du swipe.
+
+### Fermetures automatiques
+
+- Début du scroll vertical.
+- Changement de filtre.
+- Rechargement important de la liste.
+- Ouverture d'une autre carte.
+- Ouverture de la fiche décision ou des archives.
+- Archivage ou suppression.
+- Perte de focus, changement d'écran et démontage.
+
+### Clavier
+
+- Les champs d'ajout et de modification transmettent leur cible native à l'écran.
+- Le `ScrollView` révèle le champ au focus, puis recommence après l'animation du clavier.
+- Un espace inférieur temporaire permet de remonter le dernier groupe Atouts/Freins.
+- Le bouton `+` reste dans la même ligne que le champ et le footer d'analyse reste masqué pendant la saisie.
+- Les comportements existants « Terminé », fermeture au scroll et `keyboardShouldPersistTaps="handled"` sont conservés.
+
+### Validation réelle
+
+- Typecheck TypeScript réussi sans erreur.
+- Expo Doctor réussi : 18 contrôles sur 18.
+- Bundles de production Web, iOS et Android générés avec succès.
+- Onze contrôles déterministes temporaires ont validé la priorité verticale, le retour vers la droite et les swipes partiels, lents et rapides.
+- Le simulateur iPhone 17 Pro Max a démarré, mais l'installation d'Expo Go n'a pas abouti : aucune validation interactive iOS n'est donc revendiquée.
+- Aucun émulateur Android n'était disponible et le navigateur intégré n'était pas accessible.
+- Aucun test tactile iOS ou Android, aucun test visuel Web et aucun test Dynamic Type ne sont revendiqués à ce stade.
+
+### Restant ouvert
+
+- Validation tactile sur grands iPhone et Android.
+- Validation visuelle interactive Web.
+- Dynamic Type, VoiceOver et TalkBack.
+- Action visible « Archiver la décision » dans la fiche, pour que le swipe ne reste pas le seul moyen d'archiver.
+- Animation pédagogique du swipe, après validation de sa stabilité et choix d'une persistance proportionnée.
+
+## [Non publié] — Audit de clôture de Comparaison équilibrée — 2026-08-09
+
+### Statut réel
+
+- L'implémentation technique de Comparaison équilibrée est terminée et compilable.
+- Sa validation UX sur appareils physiques et avec des utilisateurs reste ouverte.
+- Les exports Web, iOS et Android prouvent la compilation du code, pas la qualité du rendu ou la compréhension de l'interface.
+
+### Nature des contrôles annoncés
+
+- Les 13 contrôles précédemment annoncés étaient des contrôles déterministes exécutés avec un script Node temporaire.
+- Le script compilait les fonctions TypeScript utiles dans `/tmp`, les appelait avec des données préparées et vérifiait leurs résultats avec des assertions.
+- Aucun fichier de test n'a été ajouté au projet et aucune commande de test rejouable n'existe dans `package.json`.
+- Ces contrôles ne sont donc ni des tests automatisés enregistrés, ni une vérification visuelle, ni un test utilisateur.
+
+### Corrigé après audit
+
+- Une option dont la balance est nulle ou négative peut rester en tête, mais n'utilise plus le vert favorable.
+- Le résultat utilise désormais un ton d'avertissement doux et précise qu'aucune option ne se dégage favorablement lorsque la meilleure balance est inférieure ou égale à zéro.
+- Une égalité entre deux balances négatives signale des points de vigilance importants et conserve une tendance partagée.
+- Les libellés « En tête, avec vigilance », « Davantage de freins actuellement » et « Points de vigilance partagés » accompagnent la couleur.
+- Chaque carte d'option possède une annonce accessible résumant son état, sa balance, ses atouts et ses freins.
+
+### Importance clarifiée
+
+- Secondaire = 1, Important = 3 et Décisif = 5 restent inchangés.
+- Un élément décisif pèse davantage que quatre éléments secondaires, mais pas davantage qu'un nombre illimité d'éléments.
+
+### Validations encore ouvertes
+
+- Tests automatisés enregistrés et rejouables.
+- Validation visuelle interactive sur mobile et Web.
+- VoiceOver et TalkBack sur appareils physiques.
+- Tests utilisateurs du mode comparaison.
+- Validation visuelle et compréhension de Parcours.
+
+## [Non publié] — Comparaison équilibrée — 2026-08-09
+
+### État avant modification
+
+- Le modèle possédait déjà `side`, `optionKey` et un champ facultatif `weight` de 1 à 5.
+- Le mode comparaison associait cependant tous les `pros` à l'option A et tous les `cons` à l'option B : les freins propres à chaque option ne pouvaient pas être saisis.
+- Le résultat comptait les arguments sans soustraire les freins ni utiliser leur importance.
+
+### Ajouté
+
+- Cartes Option A et Option B conservées sur un écran unique, chacune avec les sections « Atouts » et « Freins ».
+- Sélection mobile de l'importance : Secondaire, Important ou Décisif, avec « Important » par défaut.
+- Modification du texte et de l'importance d'un argument existant, en plus de l'ajout et de la suppression.
+- Balance propre à chaque option, égale aux atouts pondérés moins les freins pondérés.
+- Synthèse comparative distinguant Option A, Option B et tendance partagée, avec balances, principaux atouts, principaux freins et éléments décisifs.
+- Action explicite « Je souhaite encore réfléchir » avant l'engagement.
+- Choix acté visible jusque dans l'écran de bilan.
+
+### Calcul
+
+- Correspondance centralisée : Secondaire = 1, Important = 3, Décisif = 5.
+- En mode évaluation, le pourcentage favorable correspond à `poids Pour / (poids Pour + poids Contre)`, arrondi à l'entier et borné entre 0 et 100 ; l'absence d'argument vaut 50 %.
+- En comparaison, le résultat repose directement sur les deux balances. Le pourcentage technique reste calculable de manière déterministe, mais l'interface privilégie les balances signées afin d'éviter une fausse précision.
+
+### Migration
+
+- La clé principale `@decisionly/decisions/v1` reste inchangée.
+- Une décision sans poids reçoit « Important ».
+- Les anciennes valeurs 1–2 deviennent « Secondaire », 3 reste « Important » et 4–5 deviennent « Décisif ».
+- Une ancienne comparaison transforme ses anciens arguments A/B en atouts des options correspondantes, puis reçoit `argumentModelVersion: 2` pour que les futurs freins ne soient jamais réinterprétés.
+- Les options, le choix acté, les statuts, le suivi et le bilan existants sont conservés.
+
+### Conservé
+
+- Sélecteur de format, navigation, cercle d'engagement, suivi, direction artistique, compatibilité mobile/Web et Expo SDK 54.
+
+### Limites restantes
+
+- Aucun système de tests automatisés n'existe encore dans le projet.
+- Le vrai test utilisateur du nouveau mode comparaison reste ouvert. Il devra inclure une décision à une option, une comparaison, un frein décisif et une égalité.
+
 ## [Non publié] — Cadrage d'une décision — 2026-08-08
 
 ### Ajouté

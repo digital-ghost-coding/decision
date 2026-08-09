@@ -18,17 +18,15 @@ import { FadeInView } from '../components/FadeInView';
 import { InAppNotification } from '../components/InAppNotification';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { SecondaryButton } from '../components/SecondaryButton';
+import { getArgumentWeightLabel } from '../constants/argumentWeights';
 import { decisionStatusPresentation } from '../constants/decisionStatus';
 import {
   getDecision,
   restoreDecision,
-  saveDecision,
 } from '../storage/decisionStorage';
-import { markDecisionFollowUpsRead } from '../storage/notificationStorage';
 import { colors, layout, radii, shadows, spacing } from '../theme';
 import type { Argument, Decision } from '../types/decision';
 import type { RootStackParamList } from '../types/navigation';
-import { transitionDecision } from '../utils/decisionLifecycle';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'DecisionDetail'>;
 
@@ -51,7 +49,12 @@ function ArgumentList({ emptyLabel, items }: { emptyLabel: string; items: Argume
         items.map((argument) => (
           <View key={argument.id} style={styles.argumentRow}>
             <View style={styles.argumentDot} />
-            <Text style={styles.argumentText}>{argument.text}</Text>
+            <View style={styles.argumentContent}>
+              <Text style={styles.argumentText}>{argument.text}</Text>
+              <Text style={styles.argumentWeight}>
+                {getArgumentWeightLabel(argument.weight)}
+              </Text>
+            </View>
           </View>
         ))
       ) : (
@@ -103,22 +106,6 @@ export function DecisionDetailScreen({ navigation, route }: Props) {
     }, [loadDecision]),
   );
 
-  const completeDecision = async () => {
-    if (!decision || !['acted', 'tracking'].includes(decision.status)) {
-      return;
-    }
-
-    try {
-      const completedDecision = transitionDecision(decision, 'completed');
-      await saveDecision(completedDecision);
-      await markDecisionFollowUpsRead(completedDecision.id);
-      setDecision(completedDecision);
-      setMessage('La décision est maintenant terminée.');
-    } catch {
-      setMessage('La décision n’a pas pu être mise à jour.');
-    }
-  };
-
   const restore = async () => {
     if (!decision) {
       return;
@@ -169,6 +156,15 @@ export function DecisionDetailScreen({ navigation, route }: Props) {
     decision.status === 'tracking' &&
     Boolean(decision.trackingDate) &&
     new Date(decision.trackingDate as string).getTime() <= Date.now();
+  const allArguments = [...decision.pros, ...decision.cons];
+  const getComparisonArguments = (
+    optionKey: 'optionA' | 'optionB',
+    side: 'pro' | 'con',
+  ) =>
+    allArguments.filter(
+      (argument) =>
+        argument.optionKey === optionKey && argument.side === side,
+    );
 
   return (
     <View style={styles.root}>
@@ -228,33 +224,54 @@ export function DecisionDetailScreen({ navigation, route }: Props) {
             ) : null}
 
             <FadeInView delay={100} style={styles.argumentsCard}>
-              <View style={styles.argumentSection}>
-                <Text style={styles.sectionTitle}>
-                  {hasComparison ? decision.options?.optionA : 'Pour'}
-                </Text>
-                <ArgumentList
-                  emptyLabel={
-                    hasComparison
-                      ? 'Aucun élément associé à cette option.'
-                      : 'Aucun argument pour cette décision.'
-                  }
-                  items={decision.pros}
-                />
-              </View>
-              <View style={styles.divider} />
-              <View style={styles.argumentSection}>
-                <Text style={styles.sectionTitle}>
-                  {hasComparison ? decision.options?.optionB : 'Contre'}
-                </Text>
-                <ArgumentList
-                  emptyLabel={
-                    hasComparison
-                      ? 'Aucun élément associé à cette option.'
-                      : 'Aucun argument contre cette décision.'
-                  }
-                  items={decision.cons}
-                />
-              </View>
+              {hasComparison ? (
+                <View style={styles.comparisonGroups}>
+                  {(['optionA', 'optionB'] as const).map((optionKey) => (
+                    <View key={optionKey} style={styles.comparisonGroup}>
+                      <Text style={styles.optionLabel}>
+                        {optionKey === 'optionA' ? 'Option A' : 'Option B'}
+                      </Text>
+                      <Text style={styles.sectionTitle}>
+                        {decision.options?.[optionKey]}
+                      </Text>
+
+                      <View style={styles.argumentSection}>
+                        <Text style={styles.argumentSubtitle}>Atouts</Text>
+                        <ArgumentList
+                          emptyLabel="Aucun atout pour cette option."
+                          items={getComparisonArguments(optionKey, 'pro')}
+                        />
+                      </View>
+
+                      <View style={styles.argumentSection}>
+                        <Text style={styles.argumentSubtitle}>Freins</Text>
+                        <ArgumentList
+                          emptyLabel="Aucun frein pour cette option."
+                          items={getComparisonArguments(optionKey, 'con')}
+                        />
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <>
+                  <View style={styles.argumentSection}>
+                    <Text style={styles.sectionTitle}>Pour</Text>
+                    <ArgumentList
+                      emptyLabel="Aucun argument pour cette décision."
+                      items={decision.pros}
+                    />
+                  </View>
+                  <View style={styles.divider} />
+                  <View style={styles.argumentSection}>
+                    <Text style={styles.sectionTitle}>Contre</Text>
+                    <ArgumentList
+                      emptyLabel="Aucun argument contre cette décision."
+                      items={decision.cons}
+                    />
+                  </View>
+                </>
+              )}
             </FadeInView>
 
             <FadeInView delay={140} style={styles.actions}>
@@ -281,6 +298,7 @@ export function DecisionDetailScreen({ navigation, route }: Props) {
                     onPress={async () =>
                       navigation.navigate('DecisionFollowUp', {
                         decision: await getFreshDecision(),
+                        origin: 'detail',
                       })
                     }
                   />
@@ -307,13 +325,10 @@ export function DecisionDetailScreen({ navigation, route }: Props) {
                   />
                   <SecondaryButton
                     label="Modifier le suivi"
-                    onPress={() =>
-                      navigation.navigate('DecisionFollowUp', { decision })
-                    }
-                  />
-                  <SecondaryButton
-                    label="Terminer"
-                    onPress={() => void completeDecision()}
+                    onPress={() => navigation.navigate('DecisionFollowUp', {
+                      decision,
+                      origin: 'detail',
+                    })}
                   />
                 </>
               ) : null}
@@ -432,9 +447,32 @@ const styles = StyleSheet.create({
     ...shadows.card,
   },
   argumentSection: { gap: spacing.md },
+  comparisonGroups: {
+    gap: spacing.md,
+  },
+  comparisonGroup: {
+    gap: spacing.md,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.md,
+    backgroundColor: colors.background,
+  },
+  optionLabel: {
+    color: colors.primary,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
+  },
   sectionTitle: {
     color: colors.text,
     fontSize: 22,
+    fontWeight: '800',
+  },
+  argumentSubtitle: {
+    color: colors.text,
+    fontSize: 16,
     fontWeight: '800',
   },
   argumentList: { gap: spacing.sm },
@@ -451,10 +489,18 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   },
   argumentText: {
-    flex: 1,
     color: colors.text,
     fontSize: 16,
     lineHeight: 23,
+  },
+  argumentContent: {
+    flex: 1,
+  },
+  argumentWeight: {
+    marginTop: 2,
+    color: colors.secondaryText,
+    fontSize: 12,
+    fontWeight: '700',
   },
   emptyArguments: {
     color: colors.muted,

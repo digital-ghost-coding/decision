@@ -57,7 +57,7 @@
 - [x] Action d'analyse contextuelle, masquée pendant la saisie
 - [x] Touche « Terminé » ajoutant l'argument et fermant le clavier
 - [x] Transmission des données vers le résultat
-- [ ] Importance pondérée des arguments (champ `weight` préparé)
+- [x] Importance pondérée des arguments avec trois niveaux visibles
 
 ### Résultat et analyse
 
@@ -82,6 +82,92 @@
 - [ ] Tests utilisateurs des deux parcours
 
 Le format appartient à chaque décision, jamais au profil de l'utilisateur. Les anciennes décisions sont migrées au chargement : la présence de deux options valides active le mode comparaison ; les autres décisions restent en mode évaluation. Une comparaison conserve sa question, ses deux options, les arguments associés à chacune et le choix finalement acté.
+
+## Comparaison équilibrée
+
+- [x] Atouts pour l'option A
+- [x] Freins pour l'option A
+- [x] Atouts pour l'option B
+- [x] Freins pour l'option B
+- [x] Deux options visibles sur le même écran
+- [x] Trois niveaux d'importance
+- [x] Importance « Important » par défaut
+- [x] Calcul comparatif pondéré
+- [x] Prise en compte des freins
+- [x] Mise en avant des éléments décisifs
+- [x] Résultat Option A
+- [x] Résultat Option B
+- [x] Résultat d'égalité
+- [x] Choix concret avant engagement
+- [x] Restitution dans la fiche décision
+- [x] Migration des anciennes décisions
+- [ ] Tests utilisateurs du mode comparaison
+
+La balance d'une option correspond à la somme pondérée de ses atouts moins la somme pondérée de ses freins. Les niveaux visibles utilisent une correspondance unique : Secondaire = 1, Important = 3 et Décisif = 5. Une tendance reste une aide à la lecture ; elle n'impose jamais le choix final.
+
+### Statut de validation de l'itération
+
+- [x] Implémentation technique de « Comparaison équilibrée »
+- [x] Typecheck TypeScript
+- [x] Compilation des bundles Web, iOS et Android
+- [x] Contrôles déterministes du calcul et de la migration par script temporaire
+- [ ] Tests automatisés rejouables et enregistrés dans le projet
+- [ ] Validation visuelle interactive du mode comparaison
+- [ ] Validation sur appareils physiques iOS et Android
+
+Un bundle compilé confirme la compatibilité technique du code. Il ne valide ni le rendu, ni le clavier, ni les gestes, ni la compréhension de l'interface sur un appareil réel.
+
+L'implémentation technique de Comparaison équilibrée est terminée et compilable.
+
+Sa validation UX sur appareils physiques et avec des utilisateurs reste ouverte.
+
+## Stabilité UX — Swipe et clavier
+
+### Swipe des décisions
+
+- [x] Audit de l'implémentation actuelle
+- [x] Logique déterministe garantissant une position finale ouverte ou fermée
+- [x] Une seule carte ouverte pilotée par le parent
+- [x] Fermeture de la carte précédente dès le début d'un nouveau swipe
+- [x] Fermeture au début du scroll vertical
+- [x] Fermeture au changement de filtre
+- [x] Fermeture au changement d'écran et à la perte de focus
+- [x] Nettoyage des références et animations lors des re-renders et démontages
+- [x] Priorité renforcée du scroll vertical
+- [x] Actions Archiver et Supprimer préservées
+- [ ] Alternative visible « Archiver la décision » hors du geste de swipe
+- [ ] Animation pédagogique affichée une seule fois
+- [ ] Validation tactile sur iOS
+- [ ] Validation tactile sur Android
+- [ ] Validation visuelle et interactive sur Web
+
+L'animation pédagogique reste différée : garantir une seule apparition entre plusieurs visites demanderait une persistance supplémentaire. Elle ne sera ajoutée qu'après validation tactile de la stabilité du geste.
+
+### Clavier des arguments
+
+- [x] Audit du comportement actuel
+- [x] Scroll automatique programmé vers le champ actif sur iOS et Android
+- [x] Espace inférieur ajouté pendant l'ouverture du clavier
+- [x] Bouton d'ajout conservé dans la même ligne que son champ
+- [x] Aucun conflit avec l'action principale, masquée pendant la saisie
+- [ ] Champ actif toujours visible — validation tactile
+- [ ] Bouton d'ajout toujours accessible — validation tactile
+- [ ] Mode Une option validé sur appareil
+- [ ] Mode Deux options validé sur appareil
+- [ ] Modification de tous les types d'arguments validée tactilement
+- [ ] Grands iPhone validés
+- [ ] Android validé
+- [ ] Web validé visuellement
+- [ ] Dynamic Type validé
+
+La compilation confirme que les mécanismes sont intégrés sans erreur de type. Elle ne remplace pas la validation du clavier, du toucher ou du scroll sur une plateforme réelle.
+
+La prochaine étape après cette itération est un vrai test utilisateur comprenant au minimum :
+
+- une décision à une option ;
+- une comparaison entre deux options ;
+- un frein décisif ;
+- une égalité.
 
 ---
 
@@ -134,8 +220,8 @@ Statuts disponibles : `draft`, `reflecting`, `acted`, `tracking`, `completed`, `
 - [x] Migration progressive des décisions historiques
 - [x] Horodatage de l'acte et de la fin
 - [x] Passage `acted` → `tracking` avec date de suivi facultative
-- [x] Action explicite `acted` → `completed` depuis Mes décisions
-- [x] Annulation temporaire après clôture d'une décision
+- [x] Accès explicite `acted` / `tracking` → bilan → `completed` depuis Mes décisions ; l'ancienne clôture directe a été retirée
+- [x] Compatibilité conservée pour les décisions historiquement clôturées sans bilan
 - [x] Déverrouillage effectif du jalon « Première décision terminée »
 - [x] Conservation du statut précédent lors de l'archivage
 - [ ] Interface permettant toutes les transitions
@@ -507,8 +593,8 @@ Objectif : rendre perceptible un chemin continu entre la première question et l
 - [x] Annoncer le passage vers l'engagement depuis l'écran Résultat
 - [x] Expliquer clairement ce qu'acter signifie sur l'écran d'engagement
 - [ ] Offrir un chemin visible pour reprendre sa réflexion après avoir acté
-- [ ] Faire passer toutes les actions « Terminer » par le retour d'expérience
-- [ ] Rendre l'action principale de suivi contextuelle à l'option choisie
+- [x] Faire passer toutes les actions « Terminer » par le retour d'expérience
+- [x] Rendre l'action principale de suivi contextuelle à l'option choisie
 - [ ] Faire de Mes décisions un point de reprise du parcours, pas seulement une liste de statuts
 - [ ] Aligner les libellés accessibles des cartes avec leur destination réelle
 - [ ] Valider le maintien, le relâchement et les haptics du cercle sur appareils physiques et sur Web
@@ -523,6 +609,44 @@ Objectif : rendre perceptible un chemin continu entre la première question et l
 - **Apprendre — Visionnaire** : faire le bilan et transformer l'expérience en repère.
 
 « Suivre » constitue le pont temporel entre Décideur et Visionnaire. Il ne crée pas un sixième rang : il rend possible l'apprentissage.
+
+---
+
+## Boucle Acter → Suivre → Apprendre
+
+Objectif : rendre la sortie de l'acte, le suivi facultatif et le retour d'expérience immédiatement compréhensibles, sans construire toute la Decision Inbox.
+
+- [x] Question de suivi sans ambiguïté
+- [x] Action « Oui, choisir un moment »
+- [x] Action « Pas maintenant » sans création de rappel
+- [x] Date personnalisée dans un calendrier commun à iOS, Android et Web
+- [x] Validation des dates strictement futures
+- [x] Gestion locale du jour et sérialisation ISO à midi pour éviter un décalage UTC
+- [x] Statut `acted` sans rappel et conservation de `actedAt` et du choix acté
+- [x] Statut `tracking` avec une `trackingDate`
+- [x] Modification d'un suivi avec affichage de la date actuelle
+- [x] Suppression explicite d'un suivi sans suppression de la décision
+- [x] Nettoyage des anciennes notifications après modification, suppression ou bilan
+- [x] Toutes les fins accessibles passent par le bilan
+- [x] Satisfaction, note facultative et `completedAt` enregistrés par le bilan
+- [x] Retour vers Mes décisions après le bilan
+- [x] Ouverture automatique du filtre « Terminées »
+- [x] Décision terminée mise en évidence calmement et temporairement
+- [x] Paramètres temporaires de navigation consommés une seule fois
+- [x] Statut « Terminée » et coche visibles dans la liste
+- [x] Notification « Décision actée » avec action « Voir ma progression » vers Parcours
+- [x] Notification d'échéance « Faire le bilan » conservée vers `DecisionReviewScreen`
+- [x] Compatibilité des anciennes décisions déjà terminées sans bilan
+- [x] Contrôles automatisés des dates et de la clôture par le bilan
+- [ ] Tests automatisés complets de la boucle avec stockage et navigation
+- [ ] Validation de l'annulation et de la sélection existante dans le calendrier interactif
+- [ ] Validation de l'absence de doublon après plusieurs cycles réels de modification
+- [ ] Validation visuelle Web
+- [ ] Validation physique iOS
+- [ ] Validation physique Android
+- [ ] Test utilisateur du parcours complet
+
+Une compilation valide la cohérence du code, pas le rendu, les gestes, le bouton Retour ou le comportement réel du calendrier sur appareil.
 
 ---
 
@@ -563,8 +687,12 @@ Constat de départ : le flux principal et la boucle locale de suivi sont fonctio
 - [x] Chapitres présentés comme une évolution de compétences
 - [x] Jalons reliés aux données réelles et à des actions directes
 - [x] Réduire les répétitions restantes entre progression globale, chapitre et jalons
-- [ ] Tester la compréhension du prochain pas avec des utilisateurs externes
-- [ ] Valider le carrousel, les gestes et la lecture sur petits écrans, tablette et Web
+- [ ] Validation visuelle de Parcours dans son contexte réel
+- [ ] Compréhension du changement de chapitre
+- [ ] Validation visuelle du lien entre une carte de chapitre et ses jalons
+- [ ] Test utilisateur de la prochaine étape avec des utilisateurs externes
+- [ ] Validation mobile de Parcours : petits écrans, tablette, gestes et lecture
+- [ ] Validation Web de Parcours : carrousel, focus, gestes et lecture
 - [ ] Retirer les composants Parcours hérités devenus inutilisés
 
 ### Decision Inbox
@@ -581,7 +709,7 @@ Constat de départ : le flux principal et la boucle locale de suivi sont fonctio
 - [x] Choix d'une échéance de suivi
 - [x] Détection d'une échéance au démarrage et au retour au premier plan
 - [x] Bilan avec satisfaction, note personnelle et date de complétion
-- [ ] Garantir un parcours cohérent vers le bilan depuis chaque action « Terminer »
+- [x] Garantir un parcours cohérent vers le bilan depuis chaque action « Terminer »
 - [ ] Expliquer clairement la différence entre décision actée, suivie et terminée
 - [ ] Restituer l'apprentissage passé dans la fiche décision et le Parcours
 - [ ] Tester les migrations, changements d'échéance et rappels sans doublon
