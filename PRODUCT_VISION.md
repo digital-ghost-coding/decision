@@ -107,6 +107,8 @@ Le format dépend de la décision, pas de la personne. Une même personne peut �
 
 Une formulation contenant « ou » alors que le mode évaluation est sélectionné doit être signalée comme potentiellement ambiguë. L'interface explique pourquoi, propose le mode comparaison et invite à reformuler si l'utilisateur souhaite réellement évaluer une seule option.
 
+Le cadrage doit rester libre pendant la saisie. Après avoir écrit sa question, l'utilisateur peut conserver le clavier ouvert et faire défiler naturellement le formulaire vers la suite, notamment jusqu'aux champs Option A et Option B en mode comparaison. Aucun repositionnement programmatique ne doit reprendre la main pour ramener la vue vers la question ; la visibilité repose sur les comportements natifs du clavier et du scroll.
+
 Avant l'engagement, l'utilisateur choisit explicitement l'option qu'il retient. La tendance appartient à l'analyse. Le choix appartient toujours à l'utilisateur. Décisions ne présélectionne pas une décision à sa place. Le cercle d'engagement confirme et enregistre ce choix concret, jamais uniquement le texte d'une question.
 
 Comparer deux options ne consiste pas à compter leurs avantages. Une décision devient plus claire lorsque l'utilisateur peut exprimer ce que chaque option lui apporte, ce qu'elle lui coûte et ce qui compte réellement pour lui.

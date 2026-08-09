@@ -2,6 +2,31 @@
 
 Toutes les évolutions notables du produit sont conservées dans ce fichier.
 
+## [Non publié] — Scroll naturel de Nouvelle décision — 2026-08-09
+
+### Correction
+
+- Suppression du repositionnement de la question lancé au focus avec `requestAnimationFrame` et `scrollResponderScrollNativeHandleToKeyboard`.
+- Suppression des références et annulations associées : aucune animation différée ne peut reprendre la main après un geste manuel.
+- `KeyboardAvoidingView` et `ScrollView` gèrent seuls la zone visible pendant la saisie.
+- Le scroll ne demande plus la fermeture du clavier au glissement.
+- Le focus visuel de la question reste inchangé.
+- Les modes « Évaluer une option » et « Comparer deux options » conservent leur structure ; Option A et Option B restent accessibles dans le même scroll en mode comparaison.
+
+### Périmètre préservé
+
+- Aucun changement du design, du modèle, des données, de la navigation, des versions Expo ou des dépendances.
+- Les tests de non-régression vérifient l'absence de repositionnement programmatique, le maintien des conteneurs clavier/scroll et la présence des champs des deux formats.
+
+### Validation
+
+- Typecheck TypeScript réussi.
+- Les deux tests ciblés du scroll naturel et des modes évaluation/comparaison réussissent.
+- La suite complète exécute 64 tests : 63 réussissent ; un test préexistant du sélecteur d'importance reste en échec, car il attend une hauteur de 50 alors que le code versionné utilise 15. Ce design hors périmètre n'a pas été modifié.
+- Expo Doctor réussi : 18 contrôles sur 18.
+- Bundles de production Web, iOS et Android générés avec succès.
+- La compilation et les contrôles de code ne remplacent pas une validation tactile du clavier et du scroll sur appareils physiques.
+
 ## [Non publié] — Renommage de la marque — 2026-08-09
 
 ### Nouveau nom

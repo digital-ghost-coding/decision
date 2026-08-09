@@ -38,58 +38,6 @@ export function NewDecisionScreen({ navigation }: Props) {
   const [isFocused, setIsFocused] = useState(false);
 
   const validationLock = useRef(false);
-
-  const scrollViewRef = useRef<ScrollView>(null);
-  const questionRevealFrame = useRef<number | null>(null);
-  const questionRevealDone = useRef(false);
-  const manualScrollStarted = useRef(false);
-
-  const cancelQuestionReveal = () => {
-    if (questionRevealFrame.current !== null) {
-      cancelAnimationFrame(questionRevealFrame.current);
-      questionRevealFrame.current = null;
-    }
-  };
-
-  const revealQuestionField = (target: number) => {
-    setIsFocused(true);
-    manualScrollStarted.current = false;
-
-    if (
-      Platform.OS === 'web' ||
-      questionRevealDone.current
-    ) {
-      return;
-    }
-
-    questionRevealDone.current = true;
-    cancelQuestionReveal();
-
-    questionRevealFrame.current = requestAnimationFrame(() => {
-      questionRevealFrame.current = null;
-
-      if (manualScrollStarted.current) {
-        return;
-      }
-
-      scrollViewRef.current?.scrollResponderScrollNativeHandleToKeyboard(
-        target,
-        spacing.lg,
-        true,
-      );
-    });
-  };
-
-  const handleQuestionBlur = () => {
-    setIsFocused(false);
-    questionRevealDone.current = false;
-    cancelQuestionReveal();
-  };
-
-  const handleManualScroll = () => {
-    manualScrollStarted.current = true;
-    cancelQuestionReveal();
-  };
   const comparisonIsAmbiguous =
     format === 'evaluate' && looksLikeComparison(question);
   const hasBothOptions =
@@ -141,13 +89,8 @@ export function NewDecisionScreen({ navigation }: Props) {
       >
         <ScrollView
           contentContainerStyle={styles.scrollContent}
-          keyboardDismissMode={
-            Platform.OS === 'ios' ? 'interactive' : 'on-drag'
-          }
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
-          onScrollBeginDrag={handleManualScroll}
-          ref={scrollViewRef}
         >
           <View style={styles.screen}>
             <BackButton onPress={goBack} />
@@ -227,11 +170,9 @@ export function NewDecisionScreen({ navigation }: Props) {
                   accessibilityHint="Décrivez la décision que vous souhaitez prendre"
                   maxLength={MAX_CHARACTERS}
                   multiline
-                  onBlur={handleQuestionBlur}
+                  onBlur={() => setIsFocused(false)}
                   onChangeText={setQuestion}
-                  onFocus={(event) => {
-                    revealQuestionField(event.nativeEvent.target);
-                  }}
+                  onFocus={() => setIsFocused(true)}
                   placeholder={
                     format === 'compare'
                       ? 'Ex. Quel créneau convient le mieux pour le bénévolat ?'

@@ -151,14 +151,33 @@ test('la frappe dans un argument ne redéclenche plus l’autoscroll', () => {
   assert.match(screen, /cancelAnimationFrame/);
 });
 
-test('le champ de question reste stable et n’est révélé qu’une fois par focus', () => {
+test('la question laisse le scroll naturel prioritaire avec le clavier ouvert', () => {
   const screen = read('src/screens/NewDecisionScreen.tsx');
 
-  assert.match(screen, /questionRevealDone\.current/);
-  assert.match(screen, /requestAnimationFrame/);
-  assert.match(screen, /onScrollBeginDrag=\{handleManualScroll\}/);
+  assert.match(screen, /KeyboardAvoidingView/);
+  assert.match(screen, /<ScrollView/);
+  assert.match(screen, /keyboardShouldPersistTaps="handled"/);
+  assert.match(screen, /onFocus=\{\(\) => setIsFocused\(true\)\}/);
+  assert.doesNotMatch(screen, /scrollResponderScrollNativeHandleToKeyboard/);
+  assert.doesNotMatch(screen, /requestAnimationFrame/);
+  assert.doesNotMatch(screen, /cancelAnimationFrame/);
+  assert.doesNotMatch(screen, /questionReveal/);
+  assert.doesNotMatch(screen, /onScrollBeginDrag/);
+  assert.doesNotMatch(screen, /keyboardDismissMode/);
   assert.match(screen, /height: 90/);
   assert.doesNotMatch(screen, /input: \{\s*minHeight: 90/);
+});
+
+test('le scroll contient les champs attendus dans les deux formats', () => {
+  const screen = read('src/screens/NewDecisionScreen.tsx');
+  const scrollView = screen.match(/<ScrollView[\s\S]*<\/ScrollView>/);
+
+  assert.ok(scrollView);
+  assert.match(scrollView[0], /accessibilityLabel="Évaluer une option"/);
+  assert.match(scrollView[0], /accessibilityLabel="Comparer deux options"/);
+  assert.match(scrollView[0], /format === 'compare' \? \(/);
+  assert.match(scrollView[0], /accessibilityLabel="Nom de l’option A"/);
+  assert.match(scrollView[0], /accessibilityLabel="Nom de l’option B"/);
 });
 
 test('le calcul pondéré conserve le même résultat', () => {

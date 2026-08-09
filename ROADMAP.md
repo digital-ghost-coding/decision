@@ -127,9 +127,12 @@ Les cases d'implémentation décrivent le code livré. Les validations visuelles
 - [x] Migration des anciennes décisions
 - [x] Arguments associés à la bonne option
 - [x] Choix concret avant l'engagement
+- [x] Scroll naturel de la question vers les champs suivants, clavier ouvert
+- [x] Aucun repositionnement programmatique vers la question après un geste manuel
+- [x] Vérification automatisée des champs des modes évaluation et comparaison
 - [ ] Tests utilisateurs des deux parcours
 
-Le format appartient à chaque décision, jamais au profil de l'utilisateur. Les anciennes décisions sont migrées au chargement : la présence de deux options valides active le mode comparaison ; les autres décisions restent en mode évaluation. Une comparaison conserve sa question, ses deux options, les arguments associés à chacune et le choix finalement acté.
+Le format appartient à chaque décision, jamais au profil de l'utilisateur. Les anciennes décisions sont migrées au chargement : la présence de deux options valides active le mode comparaison ; les autres décisions restent en mode évaluation. Une comparaison conserve sa question, ses deux options, les arguments associés à chacune et le choix finalement acté. Dans Nouvelle décision, `KeyboardAvoidingView` et `ScrollView` assurent seuls la visibilité pendant la saisie : le clavier reste ouvert pendant le scroll et aucune animation ne ramène la vue vers la question.
 
 ## Comparaison équilibrée
 
