@@ -294,7 +294,7 @@ export function DecisionDetailScreen({ navigation, route }: Props) {
               {decision.status === 'acted' ? (
                 <>
                  <PrimaryButton
-                    label="Planifier un suivi"
+                    label="Choisir un moment pour faire le point"
                     onPress={async () =>
                       navigation.navigate('DecisionFollowUp', {
                         decision: await getFreshDecision(),

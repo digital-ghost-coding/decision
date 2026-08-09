@@ -57,6 +57,15 @@ function formatDecisionDate(value: string) {
 }
 
 
+function getDecisionDateLabel(decision: Decision) {
+  if (decision.status === 'tracking' && decision.trackingDate) {
+    return `Retour prévu : ${formatDecisionDate(decision.trackingDate)}`;
+  }
+
+  return formatDecisionDate(decision.updatedAt);
+}
+
+
 
 function getSubtitle(decision: Decision) {
 
@@ -541,9 +550,7 @@ const SwipeableDecisionRowComponent = forwardRef<
 
 
               <Text style={styles.date}>
-                {formatDecisionDate(
-                  decision.updatedAt,
-                )}
+                {getDecisionDateLabel(decision)}
               </Text>
 
 

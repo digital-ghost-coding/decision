@@ -243,7 +243,11 @@ Décisions accompagne l'utilisateur avant, pendant et après son choix.
 
 Son parcours métier prévoit six états principaux : brouillon (`draft`), réflexion (`reflecting`), actée (`acted`), en suivi (`tracking`), terminée (`completed`) et annulée (`cancelled`). L'archivage (`archived`) reste un état de classement transversal. Les transitions sont contrôlées par une logique centrale afin que les écrans, les statistiques et les futurs rappels partagent les mêmes règles.
 
-Ce cycle raconte quatre temps complémentaires : réflexion, décision, action et retour d'expérience. Une échéance de suivi peut être choisie après l'engagement, mais elle n'est jamais imposée. Le suivi est une possibilité, jamais une obligation. Refuser un rappel ne signifie pas abandonner une décision. Reporter ce choix ou changer d'avis reste une décision légitime.
+Acter une décision n'est pas la fin du parcours.
+
+L'utilisateur peut choisir de l'observer dans le temps, d'en faire le bilan et d'apprendre de ce qui s'est réellement passé.
+
+Le suivi reste toujours facultatif. Décisions accompagne sans imposer et ne présente jamais un changement d'avis comme un échec. Refuser un rappel ne signifie pas abandonner une décision.
 
 L'archivage masque la décision de la liste principale sans supprimer ses arguments. Une archive mémorise son statut précédent pour pouvoir être restaurée correctement.
 

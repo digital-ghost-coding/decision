@@ -7,19 +7,19 @@ export const DEFAULT_ARGUMENT_WEIGHT: ArgumentWeight = 3;
 
 export const argumentWeightOptions = [
   {
-    description: 'Compte comme 1 point',
+    description: 'Un élément utile, mais non déterminant',
     label: 'Secondaire',
     level: 'secondary',
     value: 1,
   },
   {
-    description: 'Compte comme 3 points',
+    description: 'Un élément qui compte vraiment',
     label: 'Important',
     level: 'important',
     value: 3,
   },
   {
-    description: 'Compte comme 5 points',
+    description: 'Un élément qui peut faire basculer le choix',
     label: 'Décisif',
     level: 'decisive',
     value: 5,

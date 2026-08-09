@@ -99,6 +99,8 @@ Toutes les évolutions notables du produit sont conservées dans ce fichier.
 - « Pas maintenant » sauvegarde une décision `acted`, sans `trackingDate`, en conservant `actedAt` et le choix concret.
 - Une date validée sauvegarde `trackingDate` et place la décision en `tracking`.
 - L'action principale devient « Planifier ce suivi » et reste désactivée sans date future.
+- Depuis la fiche d'une décision actée, l'action devient « Choisir un moment pour faire le point ».
+- Dans Mes décisions, une carte au statut « En suivi » affiche explicitement sa date de retour plutôt que sa seule date de mise à jour.
 
 ### Date personnalisée
 
@@ -135,7 +137,8 @@ Toutes les évolutions notables du produit sont conservées dans ce fichier.
 - Le nouveau type d'action `view-journey` est compris par la navigation et par la normalisation du stockage.
 - Les anciennes actions `view-decision` restent lisibles pour la compatibilité.
 - Une action inconnue stockée est ignorée au lieu de faire planter l'application.
-- La notification d'échéance conserve « Il est temps de refaire le point » et « Faire le bilan » vers `DecisionReviewScreen`.
+- La notification d'échéance affiche « Il est temps de faire le point » et « Faire le bilan » vers `DecisionReviewScreen`.
+- Son type `decision_followup_due` est transmis au composant visuel afin que le rappel utilise bien sa présentation d'échéance.
 
 ### Migration et compatibilité
 
@@ -147,6 +150,7 @@ Toutes les évolutions notables du produit sont conservées dans ce fichier.
 
 - Typecheck TypeScript réussi.
 - Quinze tests automatisés rejouables couvrent les quatre raccourcis, les dates futures, le fuseau local, les fins de mois, le changement d'année, les transitions de suivi et la clôture par le bilan.
+- Douze tests supplémentaires couvrent « Pas maintenant », planification, modification, suppression, formats évaluation/comparaison, trois ressentis, anciennes données, échéances futures et arrivées, persistance, déduplication, rappel obsolète, statistiques et contrats de navigation/Safe Area/clavier.
 - Aucun script lint n'est configuré dans le projet.
 - Expo Doctor réussi : 18 contrôles sur 18.
 - Bundles de production Web, iOS et Android générés avec succès.

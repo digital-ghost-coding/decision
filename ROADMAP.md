@@ -664,6 +664,7 @@ Objectif : rendre perceptible un chemin continu entre la première question et l
 
 Objectif : rendre la sortie de l'acte, le suivi facultatif et le retour d'expérience immédiatement compréhensibles, sans construire toute la Decision Inbox.
 
+- [x] Transition après l'acte clarifiée et retour involontaire vers le cercle empêché
 - [x] Question de suivi sans ambiguïté
 - [x] Action « Oui, choisir un moment »
 - [x] Action « Pas maintenant » sans création de rappel
@@ -672,8 +673,12 @@ Objectif : rendre la sortie de l'acte, le suivi facultatif et le retour d'expér
 - [x] Gestion locale du jour et sérialisation ISO à midi pour éviter un décalage UTC
 - [x] Statut `acted` sans rappel et conservation de `actedAt` et du choix acté
 - [x] Statut `tracking` avec une `trackingDate`
+- [x] Statut « En suivi » et date de retour visibles dans Mes décisions
 - [x] Modification d'un suivi avec affichage de la date actuelle
 - [x] Suppression explicite d'un suivi sans suppression de la décision
+- [x] Détection centralisée des échéances au démarrage et au retour au premier plan
+- [x] Notification interne persistante et dédupliquée par décision et échéance
+- [x] Navigation directe du rappel vers le bilan
 - [x] Nettoyage des anciennes notifications après modification, suppression ou bilan
 - [x] Toutes les fins accessibles passent par le bilan
 - [x] Satisfaction, note facultative et `completedAt` enregistrés par le bilan
@@ -685,8 +690,10 @@ Objectif : rendre la sortie de l'acte, le suivi facultatif et le retour d'expér
 - [x] Notification « Décision actée » avec action « Voir ma progression » vers Parcours
 - [x] Notification d'échéance « Faire le bilan » conservée vers `DecisionReviewScreen`
 - [x] Compatibilité des anciennes décisions déjà terminées sans bilan
+- [x] Statistiques réelles du Parcours et jalon « Première décision terminée » alimentés par le stockage
 - [x] Contrôles automatisés des dates et de la clôture par le bilan
-- [ ] Tests automatisés complets de la boucle avec stockage et navigation
+- [x] Douze tests déterministes de la boucle, du service de rappel, de la normalisation et des contrats de navigation
+- [ ] Test automatisé intégré avec AsyncStorage natif et navigation rendue
 - [ ] Validation de l'annulation et de la sélection existante dans le calendrier interactif
 - [ ] Validation de l'absence de doublon après plusieurs cycles réels de modification
 - [ ] Validation visuelle Web

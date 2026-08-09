@@ -62,7 +62,7 @@ export async function syncDueFollowUpNotifications(
         message:
           'Vous aviez choisi de revenir sur cette décision aujourd’hui.',
         relatedDecisionId: decision.id,
-        title: 'Il est temps de refaire le point',
+        title: 'Il est temps de faire le point',
         type: 'decision_followup_due',
       }),
     );

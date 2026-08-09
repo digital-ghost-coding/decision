@@ -80,6 +80,7 @@ export function FollowUpNotificationHost({ navigationRef }: Props) {
       onAction={() => void openReview()}
       onDismiss={() => setVisible(false)}
       title={notification.title}
+      type={notification.type}
       visible={visible}
     />
   );

@@ -9,7 +9,6 @@ import {
 
 import {
   DEFAULT_ARGUMENT_WEIGHT,
-  argumentWeightOptions,
   getArgumentWeightLabel,
   normalizeArgumentWeight,
 } from '../constants/argumentWeights';
@@ -22,6 +21,7 @@ import type {
 import { AppIcon } from './AppIcon';
 import { AnimatedPressable } from './AnimatedPressable';
 import { FadeInView } from './FadeInView';
+import { ImportanceSelector } from './ImportanceSelector';
 
 type Props = {
   argumentsList: Argument[];
@@ -39,52 +39,6 @@ type Props = {
   subtitle: string;
   title: string;
 };
-
-type WeightSelectorProps = {
-  onChange: (weight: ArgumentWeight) => void;
-  value: ArgumentWeight;
-};
-
-function WeightSelector({ onChange, value }: WeightSelectorProps) {
-  return (
-    <View
-      accessibilityRole="radiogroup"
-      style={styles.weightOptions}
-    >
-      {argumentWeightOptions.map((option) => {
-        const isSelected = option.value === value;
-
-        return (
-          <AnimatedPressable
-            accessibilityHint={option.description}
-            accessibilityLabel={`Importance ${option.label}`}
-            accessibilityRole="radio"
-            accessibilityState={{ checked: isSelected }}
-            haptic="selection"
-            key={option.level}
-            onPress={() => onChange(option.value)}
-            pressedStyle={styles.weightButtonPressed}
-            style={[
-              styles.weightButton,
-              isSelected && styles.weightButtonSelected,
-              Platform.OS === 'web' && styles.webButton,
-            ]}
-          >
-            <Text
-              numberOfLines={1}
-              style={[
-                styles.weightButtonText,
-                isSelected && styles.weightButtonTextSelected,
-              ]}
-            >
-              {option.label}
-            </Text>
-          </AnimatedPressable>
-        );
-      })}
-    </View>
-  );
-}
 
 function ArgumentSectionComponent({
   argumentsList,
@@ -197,8 +151,7 @@ function ArgumentSectionComponent({
                       submitBehavior="blurAndSubmit"
                       value={editingText}
                     />
-                    <Text style={styles.weightLabel}>Importance</Text>
-                    <WeightSelector
+                    <ImportanceSelector
                       onChange={setEditingWeight}
                       value={editingWeight}
                     />
@@ -331,8 +284,7 @@ function ArgumentSectionComponent({
           </AnimatedPressable>
         </View>
 
-        <Text style={styles.weightLabel}>Importance</Text>
-        <WeightSelector onChange={setWeight} value={weight} />
+        <ImportanceSelector onChange={setWeight} value={weight} />
       </View>
     </View>
   );
@@ -408,6 +360,10 @@ const styles = StyleSheet.create({
   weightBadge: {
     marginTop: spacing.xs,
     alignSelf: 'flex-start',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xxs,
+    borderRadius: radii.pill,
+    backgroundColor: colors.primarySoft,
     color: colors.primaryDark,
     fontSize: 12,
     fontWeight: '700',
@@ -482,43 +438,6 @@ const styles = StyleSheet.create({
   },
   addButtonPressed: {
     opacity: 0.88,
-  },
-  weightLabel: {
-    marginTop: spacing.base,
-    marginBottom: spacing.xs,
-    color: colors.secondaryText,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  weightOptions: {
-    flexDirection: 'row',
-    gap: spacing.xs,
-  },
-  weightButton: {
-    minHeight: layout.touchTarget,
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: spacing.xs,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.sm,
-    backgroundColor: colors.white,
-  },
-  weightButtonSelected: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primarySoft,
-  },
-  weightButtonPressed: {
-    opacity: 0.82,
-  },
-  weightButtonText: {
-    color: colors.secondaryText,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  weightButtonTextSelected: {
-    color: colors.primaryDark,
   },
   editArea: {
     flex: 1,

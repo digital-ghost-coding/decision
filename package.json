@@ -7,6 +7,7 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
+    "test:loop": "node --test tests/decisionLoop.test.cjs",
     "test:follow-up": "node --test tests/followUpDate.test.cjs",
     "test:result": "node --test tests/resultCompact.test.cjs"
   },
