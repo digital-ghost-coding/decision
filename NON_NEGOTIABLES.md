@@ -1,6 +1,6 @@
-# Decisionly — Non-negotiables
+# Décisions — Non-negotiables
 
-Ces règles protègent l'identité, la confiance et la qualité de Decisionly. Une fonctionnalité qui les contredit ne doit pas être développée, même si elle promet davantage d'engagement.
+Ces règles protègent l'identité, la confiance et la qualité de Décisions. Une fonctionnalité qui les contredit ne doit pas être développée, même si elle promet davantage d'engagement.
 
 ## Respect de l'utilisateur
 
@@ -17,7 +17,7 @@ Ces règles protègent l'identité, la confiance et la qualité de Decisionly. U
 
 ## Identité produit
 
-- Decisionly accompagne la réflexion sans décider à la place de l'utilisateur.
+- Décisions accompagne la réflexion sans décider à la place de l'utilisateur.
 - Une idée principale par écran.
 - Le cercle d'engagement est utilisé une seule fois dans tout le produit : au moment d'acter une décision.
 - Sa rareté lui donne sa valeur symbolique.
@@ -52,4 +52,4 @@ Ces règles protègent l'identité, la confiance et la qualité de Decisionly. U
 
 ## Références de ton
 
-Decisionly recherche la retenue et la qualité perçue d'Apple Journal, Headspace, Things et Notion. Il ne recherche ni les boucles de récompense de Duolingo, ni l'esthétique de Candy Crush, ni les mécaniques transactionnelles de Macadam.
+Décisions recherche la retenue et la qualité perçue d'Apple Journal, Headspace, Things et Notion. L'application ne recherche ni les boucles de récompense de Duolingo, ni l'esthétique de Candy Crush, ni les mécaniques transactionnelles de Macadam.

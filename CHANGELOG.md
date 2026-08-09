@@ -1,6 +1,84 @@
-# Decisionly Changelog
+# Décisions — Changelog
 
 Toutes les évolutions notables du produit sont conservées dans ce fichier.
+
+## [Non publié] — Renommage de la marque — 2026-08-09
+
+### Nouveau nom
+
+- La marque visible passe de **Decisionly** à **Décisions**.
+- Ce changement évite la lecture involontaire « Decision Only », qui réduisait la vision du produit à un choix unique et définitif.
+- Le pluriel représente un accompagnement dans le temps : chaque décision contribue à un chemin continu de réflexion, d'engagement et d'apprentissage.
+- Le nom affiché conserve toujours son accent : « Décisions ».
+- Le nom technique du package devient `decisions` lorsqu'un identifiant ASCII minuscule est requis.
+
+### Compatibilité préservée
+
+- Le `slug` Expo `decisionly` reste inchangé afin de ne pas créer une nouvelle identité de projet.
+- Les clés locales historiques `@decisionly/decisions/v1`, `@decisionly/notifications/v1` et `@decisionly/achievements/v1` restent inchangées afin que toutes les données existantes restent accessibles.
+- Le dossier du projet, les types métier `Decision*`, les routes, le modèle, le stockage, la navigation, les fonctionnalités, les versions et les dépendances ne sont pas renommés.
+- Les références à l'ancien nom dans les entrées antérieures de ce changelog restent conservées comme historique du projet.
+
+### Validation
+
+- Configuration Expo effective : nom visible « Décisions », slug interne `decisionly` et SDK `54.0.0`.
+- Typecheck TypeScript réussi.
+- Vingt-huit tests automatisés existants réussis.
+- Expo Doctor réussi : 18 contrôles sur 18.
+- Bundles de production Web, iOS et Android générés avec succès.
+- Le document Web généré porte le titre « Décisions ».
+- Aucun script lint n'est configuré et aucun test visuel sur appareil physique n'est revendiqué.
+
+## [Non publié] — Résultat et engagement compacts — 2026-08-09
+
+### État réel avant modification
+
+- Le résultat répétait les options, la tendance, les arguments importants et le rôle non décisionnaire de Decisionly dans plusieurs zones successives.
+- Les détails complets des deux options étaient affichés immédiatement, y compris des états vides comme « Aucun élément important ».
+- L'option en tête recevait directement l'action principale : elle devenait de fait le choix par défaut, sans sélection explicite préalable.
+- Plusieurs grands boutons se trouvaient après tout le contenu et le CTA principal disparaissait pendant le scroll.
+- L'écran d'engagement utilisait un titre, une carte et un paragraphe longs, des espacements fixes et un cercle fixe de 224 points ; l'action « Je veux encore réfléchir » pouvait être repoussée sous la zone visible.
+
+### Résultat simplifié et progressif
+
+- Le premier niveau conserve la question, les deux options, leur balance, leur état textuel, leurs nombres d'atouts et de freins, ainsi que l'argument le plus important lorsqu'il existe.
+- Les listes complètes, leur côté et leur importance passent derrière « Voir le détail de la comparaison » / « Réduire le détail », sans modale ni nouvel écran.
+- Une option sans contenu n'affiche plus de section vide.
+- Une seule phrase rappelle que la tendance aide à choisir sans décider à la place de l'utilisateur.
+- Les surfaces restent neutres ; les badges sémantiques associent couleur et libellé pour distinguer avance favorable, vigilance, freins et égalité.
+
+### Sélection et actions
+
+- Aucune nouvelle réflexion ne présélectionne l'option en tête ; un choix explicite antérieur conservé dans `chosenOption` reste restauré.
+- Les deux cartes ont le même rôle radio, la même surface tactile et le même état sélectionné.
+- Le CTA unique reste désactivé avec « Choisissez une option », puis devient « Continuer avec … » après sélection. Il mène au cercle sans acter immédiatement la décision.
+- Le CTA et l'action compacte « Revoir mes arguments » restent dans un footer lisible et stable pendant le scroll.
+- « Je souhaite encore réfléchir » conserve sa sauvegarde en `reflecting`, l'effacement du choix provisoire et le retour à Mes décisions.
+
+### Engagement compact
+
+- La hiérarchie devient « Acter ma décision » → « Confirmez votre choix » → choix concret → message court de réversibilité → cercle.
+- La comparaison, les arguments et la question ne sont plus répétés sur cet écran.
+- Le cercle choisit une taille centralisée de 176, 200 ou 224 points selon la hauteur disponible ; rayon, circonférence, épaisseur, progression et centrage SVG sont recalculés à partir de cette taille.
+- L'écran réduit ses marges sur une faible hauteur, évite toute hauteur minimale artificielle et conserve un scroll de sécurité dans la Safe Area.
+- L'action « Je veux encore réfléchir » reste directement sous le cercle et conserve son comportement métier.
+
+### Comportements conservés
+
+- Aucun changement du calcul, des balances, des poids Secondaire / Important / Décisif, du modèle `Decision`, des migrations, du stockage, des versions ou des dépendances.
+- `chosenOption`, la navigation vers l'engagement, le maintien d'environ deux secondes, la progression circulaire, les haptics, Reduce Motion et l'alternative Web restent en place.
+
+### Validation actuelle
+
+- Typecheck TypeScript réussi après l'implémentation.
+- Treize tests automatisés rejouables réussis pour les tendances comparatives et simples, les absences d'atout ou de frein, les éléments décisifs, la sélection explicite, les sections vides, les tailles du cercle et la durée du maintien.
+- Les quinze tests automatisés existants de la boucle de suivi restent réussis.
+- Aucun script lint n'est configuré dans le projet.
+- Expo Doctor réussi : 18 contrôles sur 18.
+- Bundles de production Web, iOS et Android générés avec succès.
+- Le serveur Web local a démarré, mais aucun navigateur n'était connecté à l'environnement : aucun test visuel ou interactif Web n'est revendiqué.
+- Les validations visuelles petit/grand iPhone, Android, Web, Dynamic Type et Reduce Motion restent ouvertes.
+- Aucun test tactile sur appareil physique et aucun test utilisateur ne sont revendiqués.
 
 ## [Non publié] — Boucle Acter → Suivre → Apprendre — 2026-08-09
 

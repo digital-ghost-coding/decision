@@ -85,7 +85,7 @@ useFocusEffect(
             </View>
 
             <Text accessibilityRole="header" style={styles.title}>
-              Decisionly
+              Décisions
             </Text>
             <Text style={styles.subtitle}>
               Prenez de meilleures décisions,
@@ -93,7 +93,7 @@ useFocusEffect(
             </Text>
 
               <Text style={styles.description}>
-              Decisionly vous aide à clarifier
+              Décisions vous aide à clarifier
               vos options, choisir sereinement,
               et apprendre de vos décisions.            
               </Text>

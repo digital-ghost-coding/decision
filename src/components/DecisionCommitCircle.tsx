@@ -12,22 +12,23 @@ import Svg, { Circle } from 'react-native-svg';
 import { useCommitInteraction } from '../hooks/useCommitInteraction';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { colors, shadows, spacing } from '../theme';
+import { COMMIT_CIRCLE_SIZES } from '../utils/commitCircleSize';
 import { AppIcon } from './AppIcon';
-
-const SIZE = 224;
-const STROKE_WIDTH = 9;
-const RADIUS = (SIZE - STROKE_WIDTH) / 2;
-const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
 type Props = {
   disabled?: boolean;
   onComplete: () => Promise<void> | void;
+  size?: number;
 };
 
 export function DecisionCommitCircle({
   disabled = false,
   onComplete,
+  size = COMMIT_CIRCLE_SIZES.regular,
 }: Props) {
+  const strokeWidth = Math.max(8, Math.round(size * 0.04));
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
   const scale = useRef(new Animated.Value(1)).current;
   const reduceMotion = useReducedMotion();
   const {
@@ -84,6 +85,11 @@ export function DecisionCommitCircle({
           onPressOut={stopHolding}
           style={({ pressed }) => [
             styles.touchSurface,
+            {
+              width: size,
+              height: size,
+              borderRadius: size / 2,
+            },
             isHolding && styles.touchSurfaceHolding,
             isComplete && styles.touchSurfaceComplete,
             disabled && !isComplete && styles.touchSurfaceDisabled,
@@ -92,31 +98,31 @@ export function DecisionCommitCircle({
           ]}
         >
           <Svg
-            height={SIZE}
+            height={size}
             pointerEvents="none"
             style={styles.progress}
-            viewBox={`0 0 ${SIZE} ${SIZE}`}
-            width={SIZE}
+            viewBox={`0 0 ${size} ${size}`}
+            width={size}
           >
             <Circle
-              cx={SIZE / 2}
-              cy={SIZE / 2}
+              cx={size / 2}
+              cy={size / 2}
               fill="transparent"
-              r={RADIUS}
+              r={radius}
               stroke={isComplete ? colors.primary : colors.disabled}
-              strokeWidth={STROKE_WIDTH}
+              strokeWidth={strokeWidth}
             />
             <Circle
-              cx={SIZE / 2}
-              cy={SIZE / 2}
+              cx={size / 2}
+              cy={size / 2}
               fill="transparent"
-              r={RADIUS}
+              r={radius}
               stroke={colors.primary}
-              strokeDasharray={`${CIRCUMFERENCE} ${CIRCUMFERENCE}`}
-              strokeDashoffset={CIRCUMFERENCE * (1 - progress)}
+              strokeDasharray={`${circumference} ${circumference}`}
+              strokeDashoffset={circumference * (1 - progress)}
               strokeLinecap="round"
-              strokeWidth={STROKE_WIDTH}
-              transform={`rotate(-90 ${SIZE / 2} ${SIZE / 2})`}
+              strokeWidth={strokeWidth}
+              transform={`rotate(-90 ${size / 2} ${size / 2})`}
             />
           </Svg>
 
@@ -130,7 +136,7 @@ export function DecisionCommitCircle({
       </Animated.View>
 
       <Text style={styles.instruction}>
-        Maintenez doucement pour confirmer votre choix
+        Maintenez pour confirmer
       </Text>
     </View>
   );
@@ -141,11 +147,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   touchSurface: {
-    width: SIZE,
-    height: SIZE,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: SIZE / 2,
     backgroundColor: colors.white,
     ...shadows.primary,
   },

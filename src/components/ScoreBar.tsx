@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
 
 
   progressPositive: {
-    backgroundColor: 'rgb(21, 128, 61)',
+    backgroundColor: colors.success,
   },
 
 });

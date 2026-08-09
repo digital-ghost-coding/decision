@@ -156,7 +156,7 @@ export function ProfileScreen({ navigation }: Props) {
 
 
         <Text style={styles.version}>
-          Decisionly · MVP
+          Décisions · MVP
         </Text>
 
       </ScrollView>

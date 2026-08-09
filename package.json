@@ -1,5 +1,5 @@
 {
-  "name": "decisionly",
+  "name": "decisions",
   "version": "1.0.0",
   "main": "index.ts",
   "scripts": {
@@ -7,7 +7,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "test:follow-up": "node --test tests/followUpDate.test.cjs"
+    "test:follow-up": "node --test tests/followUpDate.test.cjs",
+    "test:result": "node --test tests/resultCompact.test.cjs"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",

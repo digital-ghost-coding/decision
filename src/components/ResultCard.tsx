@@ -1,11 +1,11 @@
-import { memo } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { memo, useState } from 'react';
+import { Platform, StyleSheet, Text, View } from 'react-native';
 
 import {
   getArgumentWeightLabel,
   normalizeArgumentWeight,
 } from '../constants/argumentWeights';
-import { colors, radii, shadows, spacing } from '../theme';
+import { colors, motion, radii, shadows, spacing } from '../theme';
 import type {
   Argument,
   Decision,
@@ -13,28 +13,40 @@ import type {
   DecisionOptionScore,
   DecisionScore,
 } from '../types/decision';
+import { AnimatedPressable } from './AnimatedPressable';
+import { AppIcon } from './AppIcon';
+import { FadeInView } from './FadeInView';
 import { ScoreBar } from './ScoreBar';
 
-type Props = {
-  decision: Decision;
-  score: DecisionScore;
+export type ResultChoice = {
+  label: string;
+  value: string;
 };
+
+type Props = {
+  choices: ResultChoice[];
+  decision: Decision;
+  onSelectChoice: (choice: string) => void;
+  score: DecisionScore;
+  selectedChoice: string | null;
+};
+
+type OptionState = 'behind' | 'leading' | 'tie';
+type OptionTone = 'caution' | 'negative' | 'neutral' | 'positive';
 
 type ComparisonOptionProps = {
   argumentsList: Argument[];
-  caution: boolean;
-  label: string;
+  choice: ResultChoice;
+  onSelect: (choice: string) => void;
   optionKey: DecisionOptionKey;
   optionScore: DecisionOptionScore;
-  state: 'leading' | 'behind' | 'tie';
+  selected: boolean;
+  state: OptionState;
+  tone: OptionTone;
 };
 
-function formatArgumentCount(count: number) {
-  return `${count} argument${count > 1 ? 's' : ''}`;
-}
-
 function formatBalance(balance: number) {
-  return balance > 0 ? `+${balance}` : String(balance);
+  return balance > 0 ? `+${balance}` : String(balance).replace('-', '−');
 }
 
 function formatAccessibleBalance(balance: number) {
@@ -49,34 +61,180 @@ function formatAccessibleBalance(balance: number) {
   return 'zéro';
 }
 
-function ImportantArguments({ items }: { items: Argument[] }) {
-  const importantItems = [...items]
-    .filter((argument) => normalizeArgumentWeight(argument.weight) >= 3)
-    .sort(
-      (first, second) =>
-        normalizeArgumentWeight(second.weight) -
-        normalizeArgumentWeight(first.weight),
-    )
-    .slice(0, 2);
+function formatCount(count: number, singular: string, plural: string) {
+  return `${count} ${count === 1 ? singular : plural}`;
+}
 
-  if (importantItems.length === 0) {
-    return <Text style={styles.emptyHighlight}>Aucun élément important.</Text>;
+function sortByImportance(items: Argument[]) {
+  return [...items].sort(
+    (first, second) =>
+      normalizeArgumentWeight(second.weight) -
+      normalizeArgumentWeight(first.weight),
+  );
+}
+
+function getOptionArguments(
+  argumentsList: Argument[],
+  optionKey: DecisionOptionKey,
+  side?: 'pro' | 'con',
+) {
+  return argumentsList.filter(
+    (argument) =>
+      argument.optionKey === optionKey &&
+      (side === undefined || argument.side === side),
+  );
+}
+
+function getStateLabel(state: OptionState, tone: OptionTone) {
+  if (state === 'tie') {
+    return tone === 'caution'
+      ? 'Points de vigilance partagés'
+      : 'Tendance partagée';
+  }
+
+  if (state === 'leading') {
+    return tone === 'caution'
+      ? 'En tête, avec vigilance'
+      : 'En tête actuellement';
+  }
+
+  return tone === 'negative'
+    ? 'Davantage de freins actuellement'
+    : 'Balance plus basse actuellement';
+}
+
+function FeaturedArgument({ item }: { item?: Argument }) {
+  if (!item) {
+    return null;
+  }
+
+  const weightLabel = getArgumentWeightLabel(item.weight);
+
+  return (
+    <View style={styles.featuredArgument}>
+      <Text
+        style={[
+          styles.featuredArgumentLabel,
+          weightLabel === 'Décisif' && styles.decisiveLabel,
+        ]}
+      >
+        {weightLabel} · {item.side === 'pro' ? 'Atout' : 'Frein'}
+      </Text>
+      <Text numberOfLines={2} style={styles.featuredArgumentText}>
+        {item.text}
+      </Text>
+    </View>
+  );
+}
+
+function ComparisonOption({
+  argumentsList,
+  choice,
+  onSelect,
+  optionKey,
+  optionScore,
+  selected,
+  state,
+  tone,
+}: ComparisonOptionProps) {
+  const optionArguments = getOptionArguments(argumentsList, optionKey);
+  const featuredArgument = sortByImportance(optionArguments)[0];
+  const stateLabel = getStateLabel(state, tone);
+  const accessibilityLabel = `${choice.label}. ${stateLabel}. Balance ${formatAccessibleBalance(optionScore.balance)}. ${formatCount(optionScore.proCount, 'atout', 'atouts')}. ${formatCount(optionScore.conCount, 'frein', 'freins')}.`;
+
+  return (
+    <AnimatedPressable
+      accessibilityLabel={accessibilityLabel}
+      accessibilityRole="radio"
+      accessibilityState={{ checked: selected, selected }}
+      haptic="selection"
+      onPress={() => onSelect(choice.value)}
+      pressedStyle={styles.optionPressed}
+      scaleTo={motion.subtlePressScale}
+      style={[
+        styles.option,
+        selected && styles.optionSelected,
+        Platform.OS === 'web' && styles.webButton,
+      ]}
+    >
+      <View style={styles.optionTopRow}>
+        <View style={styles.optionNameArea}>
+          <Text style={styles.optionName}>{choice.label}</Text>
+          <View
+            style={[
+              styles.stateBadge,
+              tone === 'positive' && styles.positiveBadge,
+              tone === 'caution' && styles.cautionBadge,
+              tone === 'negative' && styles.negativeBadge,
+              tone === 'neutral' && styles.neutralBadge,
+            ]}
+          >
+            <Text
+              style={[
+                styles.stateLabel,
+                tone === 'positive' && styles.positiveText,
+                tone === 'caution' && styles.cautionText,
+                tone === 'negative' && styles.negativeText,
+              ]}
+            >
+              {stateLabel}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.balanceArea}>
+          <Text style={styles.balanceValue}>
+            {formatBalance(optionScore.balance)}
+          </Text>
+          <View style={[styles.radio, selected && styles.radioSelected]}>
+            {selected ? (
+              <AppIcon
+                color={colors.white}
+                name="check"
+                size="xs"
+                weight="medium"
+              />
+            ) : null}
+          </View>
+        </View>
+      </View>
+
+      <Text style={styles.countSummary}>
+        {formatCount(optionScore.proCount, 'atout', 'atouts')} ·{' '}
+        {formatCount(optionScore.conCount, 'frein', 'freins')}
+      </Text>
+
+      <FeaturedArgument item={featuredArgument} />
+    </AnimatedPressable>
+  );
+}
+
+function ArgumentDetailList({
+  items,
+  title,
+}: {
+  items: Argument[];
+  title: string;
+}) {
+  if (items.length === 0) {
+    return null;
   }
 
   return (
-    <View style={styles.highlightList}>
-      {importantItems.map((argument) => {
+    <View style={styles.detailGroup}>
+      <Text style={styles.detailGroupTitle}>{title}</Text>
+      {sortByImportance(items).map((argument) => {
         const weightLabel = getArgumentWeightLabel(argument.weight);
 
         return (
-          <View key={argument.id} style={styles.highlightRow}>
-            <View style={styles.highlightDot} />
-            <View style={styles.highlightContent}>
-              <Text style={styles.highlightText}>{argument.text}</Text>
+          <View key={argument.id} style={styles.detailArgument}>
+            <View style={styles.detailDot} />
+            <View style={styles.detailArgumentContent}>
+              <Text style={styles.detailArgumentText}>{argument.text}</Text>
               <Text
                 style={[
-                  styles.highlightWeight,
-                  weightLabel === 'Décisif' && styles.decisiveWeight,
+                  styles.detailWeight,
+                  weightLabel === 'Décisif' && styles.decisiveLabel,
                 ]}
               >
                 {weightLabel}
@@ -89,102 +247,45 @@ function ImportantArguments({ items }: { items: Argument[] }) {
   );
 }
 
-function ComparisonOption({
+function ComparisonDetails({
   argumentsList,
-  caution,
-  label,
-  optionKey,
-  optionScore,
-  state,
-}: ComparisonOptionProps) {
-  const pros = argumentsList.filter(
-    (argument) =>
-      argument.optionKey === optionKey && argument.side === 'pro',
-  );
-  const cons = argumentsList.filter(
-    (argument) =>
-      argument.optionKey === optionKey && argument.side === 'con',
-  );
-  const stateLabel =
-    caution && state === 'leading'
-      ? 'En tête, avec vigilance'
-      : caution && state === 'behind'
-        ? 'Davantage de freins actuellement'
-        : caution && state === 'tie'
-          ? 'Points de vigilance partagés'
-          : state === 'leading'
-      ? 'En tête actuellement'
-      : state === 'behind'
-        ? 'Balance plus basse actuellement'
-        : 'Balance partagée';
-  const accessibilityLabel = `${label}. ${stateLabel}. Balance ${formatAccessibleBalance(optionScore.balance)}. Atouts, ${optionScore.proCount}, poids ${optionScore.proWeight}. Freins, ${optionScore.conCount}, poids ${optionScore.conWeight}.`;
-
+  choices,
+}: {
+  argumentsList: Argument[];
+  choices: ResultChoice[];
+}) {
   return (
-    <View
-      style={[
-        styles.comparisonOption,
-        caution && styles.cautionOption,
-        !caution && state === 'leading' && styles.leadingOption,
-        !caution && state === 'behind' && styles.behindOption,
-        !caution && state === 'tie' && styles.tieOption,
-      ]}
-    >
-      <View
-        accessibilityLabel={accessibilityLabel}
-        accessible
-        style={styles.comparisonHeader}
-      >
-        <View style={styles.comparisonNameArea}>
-          <Text style={styles.comparisonName}>{label}</Text>
-          <Text
-            style={[
-              styles.stateLabel,
-              caution && styles.cautionText,
-              !caution && state === 'leading' && styles.leadingText,
-              !caution && state === 'behind' && styles.behindText,
-            ]}
-          >
-            {stateLabel}
-          </Text>
-        </View>
-        <View style={styles.balanceArea}>
-          <Text style={styles.balanceLabel}>Balance</Text>
-          <Text style={styles.balanceValue}>
-            {formatBalance(optionScore.balance)}
-          </Text>
-        </View>
-      </View>
+    <FadeInView style={styles.details}>
+      {choices.map((choice, index) => {
+        const optionKey: DecisionOptionKey =
+          index === 0 ? 'optionA' : 'optionB';
+        const pros = getOptionArguments(argumentsList, optionKey, 'pro');
+        const cons = getOptionArguments(argumentsList, optionKey, 'con');
 
-      <View style={styles.weightSummary}>
-        <Text style={styles.weightSummaryText}>
-          Atouts +{optionScore.proWeight}
-        </Text>
-        <Text style={styles.weightSummaryText}>
-          Freins −{optionScore.conWeight}
-        </Text>
-      </View>
+        if (pros.length === 0 && cons.length === 0) {
+          return null;
+        }
 
-      <View style={styles.argumentSummary}>
-        <View style={styles.summarySection}>
-          <Text style={styles.summaryTitle}>Atouts importants</Text>
-          <ImportantArguments items={pros} />
-        </View>
-        <View style={styles.summarySection}>
-          <Text style={styles.summaryTitle}>Freins importants</Text>
-          <ImportantArguments items={cons} />
-        </View>
-      </View>
-    </View>
+        return (
+          <View key={choice.value} style={styles.detailOption}>
+            <Text style={styles.detailOptionName}>{choice.label}</Text>
+            <ArgumentDetailList items={pros} title="Atouts" />
+            <ArgumentDetailList items={cons} title="Freins" />
+          </View>
+        );
+      })}
+    </FadeInView>
   );
 }
 
 function ComparisonResult({
+  choices,
   decision,
+  onSelectChoice,
   score,
-}: {
-  decision: Decision;
-  score: DecisionScore;
-}) {
+  selectedChoice,
+}: Props) {
+  const [detailsExpanded, setDetailsExpanded] = useState(false);
   const comparison = score.comparison;
 
   if (!comparison || !decision.options) {
@@ -198,330 +299,379 @@ function ComparisonResult({
     comparison.optionB.balance,
   );
   const caution = highestBalance <= 0;
+  const hasDetails = argumentsList.length > 0;
+
+  const getOptionState = (optionKey: DecisionOptionKey): OptionState =>
+    isTie
+      ? 'tie'
+      : comparison.result === optionKey
+        ? 'leading'
+        : 'behind';
+  const getOptionTone = (
+    optionKey: DecisionOptionKey,
+    optionScore: DecisionOptionScore,
+  ): OptionTone => {
+    const state = getOptionState(optionKey);
+
+    if (state === 'tie') {
+      return caution ? 'caution' : 'neutral';
+    }
+
+    if (state === 'leading') {
+      return caution ? 'caution' : 'positive';
+    }
+
+    return optionScore.balance < 0 ? 'negative' : 'neutral';
+  };
 
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>Votre comparaison</Text>
-      <Text style={styles.comparisonIntro}>
-        La balance additionne les atouts et retire les freins selon leur
-        importance.
+      <Text style={styles.sectionLabel}>
+        {isTie ? 'Tendance partagée' : 'Tendance actuelle'}
       </Text>
 
-      <View style={styles.comparisonOptions}>
+      <View accessibilityRole="radiogroup" style={styles.options}>
         <ComparisonOption
           argumentsList={argumentsList}
-          caution={caution}
-          label={decision.options.optionA}
+          choice={choices[0]}
+          onSelect={onSelectChoice}
           optionKey="optionA"
           optionScore={comparison.optionA}
-          state={
-            isTie
-              ? 'tie'
-              : comparison.result === 'optionA'
-                ? 'leading'
-                : 'behind'
-          }
+          selected={selectedChoice === choices[0].value}
+          state={getOptionState('optionA')}
+          tone={getOptionTone('optionA', comparison.optionA)}
         />
         <ComparisonOption
           argumentsList={argumentsList}
-          caution={caution}
-          label={decision.options.optionB}
+          choice={choices[1]}
+          onSelect={onSelectChoice}
           optionKey="optionB"
           optionScore={comparison.optionB}
-          state={
-            isTie
-              ? 'tie'
-              : comparison.result === 'optionB'
-                ? 'leading'
-                : 'behind'
-          }
+          selected={selectedChoice === choices[1].value}
+          state={getOptionState('optionB')}
+          tone={getOptionTone('optionB', comparison.optionB)}
         />
       </View>
 
-      <View
-        accessibilityLabel={`${isTie ? 'Tendance partagée' : 'Tendance actuelle'}. ${score.message}`}
-        accessibilityLiveRegion="polite"
-        accessible
-        style={[
-          styles.tendencyCard,
-          caution
-            ? styles.cautionTendency
-            : isTie
-              ? styles.tieTendency
-              : styles.leadingTendency,
-        ]}
-      >
-        <Text style={styles.tendencyLabel}>
-          {isTie ? 'Tendance partagée' : 'Tendance actuelle'}
-        </Text>
-        <Text style={styles.message}>{score.message}</Text>
-      </View>
-
-      <Text style={styles.detailsHint}>
-        Les éléments secondaires restent disponibles dans la fiche de la
-        décision et lorsque vous reprenez votre réflexion.
+      <Text style={styles.analysisNotice}>
+        Cette tendance vous aide à choisir, sans décider à votre place.
       </Text>
+
+      {hasDetails ? (
+        <AnimatedPressable
+          accessibilityLabel={
+            detailsExpanded
+              ? 'Réduire le détail de la comparaison'
+              : 'Voir le détail de la comparaison'
+          }
+          accessibilityRole="button"
+          accessibilityState={{ expanded: detailsExpanded }}
+          onPress={() => setDetailsExpanded((current) => !current)}
+          pressedStyle={styles.detailsButtonPressed}
+          style={styles.detailsButton}
+        >
+          <Text style={styles.detailsButtonLabel}>
+            {detailsExpanded
+              ? 'Réduire le détail'
+              : 'Voir le détail de la comparaison'}
+          </Text>
+          <AppIcon
+            color={colors.primary}
+            name="chevron-right"
+            size="sm"
+            style={detailsExpanded ? styles.expandedIcon : undefined}
+          />
+        </AnimatedPressable>
+      ) : null}
+
+      {detailsExpanded ? (
+        <ComparisonDetails argumentsList={argumentsList} choices={choices} />
+      ) : null}
     </View>
   );
 }
 
-function EvaluationResult({ score }: { score: DecisionScore }) {
+function EvaluationChoice({
+  choice,
+  onSelect,
+  selected,
+}: {
+  choice: ResultChoice;
+  onSelect: (choice: string) => void;
+  selected: boolean;
+}) {
+  return (
+    <AnimatedPressable
+      accessibilityLabel={choice.label}
+      accessibilityRole="radio"
+      accessibilityState={{ checked: selected, selected }}
+      haptic="selection"
+      onPress={() => onSelect(choice.value)}
+      pressedStyle={styles.optionPressed}
+      style={[
+        styles.evaluationChoice,
+        selected && styles.optionSelected,
+        Platform.OS === 'web' && styles.webButton,
+      ]}
+    >
+      <Text style={styles.evaluationChoiceLabel}>{choice.label}</Text>
+      <View style={[styles.radio, selected && styles.radioSelected]}>
+        {selected ? (
+          <AppIcon
+            color={colors.white}
+            name="check"
+            size="xs"
+            weight="medium"
+          />
+        ) : null}
+      </View>
+    </AnimatedPressable>
+  );
+}
+
+function EvaluationResult({
+  choices,
+  onSelectChoice,
+  score,
+  selectedChoice,
+}: Props) {
   const balanced = score.proWeight === score.conWeight;
   const isPositive = score.trend === 'positive';
 
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>Votre réflexion</Text>
+      <Text style={styles.sectionLabel}>Tendance actuelle</Text>
 
-      <View style={styles.counts}>
-        <View style={styles.simpleOptionCard}>
-          <Text style={styles.simpleOptionName}>Pour</Text>
-          <Text style={styles.simpleOptionMeta}>
-            {formatArgumentCount(score.proCount)} · poids {score.proWeight}
+      <View style={styles.evaluationSummary}>
+        <View style={styles.scoreHeader}>
+          <Text style={styles.scoreLabel}>
+            {balanced ? 'Équilibre actuel' : 'Part favorable pondérée'}
+          </Text>
+          <Text
+            style={[
+              styles.percentage,
+              isPositive && styles.percentagePositive,
+            ]}
+          >
+            {score.percentage}%
           </Text>
         </View>
-        <View style={styles.simpleOptionCard}>
-          <Text style={styles.simpleOptionName}>Contre</Text>
-          <Text style={styles.simpleOptionMeta}>
-            {formatArgumentCount(score.conCount)} · poids {score.conWeight}
-          </Text>
-        </View>
+        <ScoreBar percentage={score.percentage} positive={isPositive} />
+        <Text style={styles.evaluationCounts}>
+          {formatCount(score.proCount, 'argument pour', 'arguments pour')} ·{' '}
+          {formatCount(score.conCount, 'argument contre', 'arguments contre')}
+        </Text>
+        <Text style={styles.evaluationMessage}>{score.message}</Text>
       </View>
 
-      <View style={styles.scoreHeader}>
-        <Text style={styles.scoreLabel}>
-          {balanced ? 'Équilibre actuel' : 'Part favorable pondérée'}
-        </Text>
-        <Text
-          style={[
-            styles.percentage,
-            isPositive && styles.percentagePositive,
-          ]}
-        >
-          {score.percentage}%
-        </Text>
-      </View>
+      <Text style={styles.analysisNotice}>
+        Cette tendance vous aide à choisir, sans décider à votre place.
+      </Text>
 
-      <ScoreBar percentage={score.percentage} positive={isPositive} />
-      <Text style={styles.message}>{score.message}</Text>
+      <View accessibilityRole="radiogroup" style={styles.evaluationChoices}>
+        {choices.map((choice) => (
+          <EvaluationChoice
+            choice={choice}
+            key={choice.value}
+            onSelect={onSelectChoice}
+            selected={selectedChoice === choice.value}
+          />
+        ))}
+      </View>
     </View>
   );
 }
 
-function ResultCardComponent({ decision, score }: Props) {
-  if (decision.format === 'compare' && score.comparison) {
-    return <ComparisonResult decision={decision} score={score} />;
+function ResultCardComponent(props: Props) {
+  if (props.decision.format === 'compare' && props.score.comparison) {
+    return <ComparisonResult {...props} />;
   }
 
-  return <EvaluationResult score={score} />;
+  return <EvaluationResult {...props} />;
 }
 
 export const ResultCard = memo(ResultCardComponent);
 
 const styles = StyleSheet.create({
   card: {
-    padding: spacing.lg,
+    padding: spacing.md,
     borderRadius: radii.lg,
     backgroundColor: colors.white,
     ...shadows.card,
   },
-  title: {
-    color: colors.text,
-    fontSize: 24,
-    fontWeight: '800',
-    letterSpacing: -0.5,
-  },
-  comparisonIntro: {
-    marginTop: spacing.sm,
+  sectionLabel: {
     color: colors.secondaryText,
-    fontSize: 14,
-    lineHeight: 21,
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
   },
-  comparisonOptions: {
-    marginTop: spacing.ml,
-    gap: spacing.base,
-  },
-  comparisonOption: {
+  options: { marginTop: spacing.base, gap: spacing.sm },
+  option: {
+    minHeight: 132,
     padding: spacing.md,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colors.border,
     borderRadius: radii.md,
-    backgroundColor: colors.background,
+    backgroundColor: colors.surface,
   },
-  leadingOption: {
-    borderColor: colors.success,
-    backgroundColor: colors.successSoft,
-  },
-  behindOption: {
-    borderColor: colors.dangerMuted,
-    backgroundColor: colors.dangerSoft,
-  },
-  tieOption: {
+  optionSelected: {
     borderColor: colors.primary,
-    backgroundColor: colors.primarySoft,
+    backgroundColor: colors.primarySurface,
   },
-  cautionOption: {
-    borderColor: colors.warning,
-    backgroundColor: colors.warningSoft,
-  },
-  comparisonHeader: {
+  optionPressed: { borderColor: colors.focus },
+  optionTopRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
     gap: spacing.base,
   },
-  comparisonNameArea: {
-    flex: 1,
-  },
-  comparisonName: {
+  optionNameArea: { flex: 1 },
+  optionName: {
     color: colors.text,
     fontSize: 18,
     fontWeight: '800',
     lineHeight: 24,
   },
-  stateLabel: {
+  stateBadge: {
+    alignSelf: 'flex-start',
     marginTop: spacing.xs,
-    color: colors.primaryDark,
-    fontSize: 12,
-    fontWeight: '800',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xxs,
+    borderRadius: radii.pill,
   },
-  leadingText: {
-    color: colors.success,
-  },
-  behindText: {
-    color: colors.dangerMuted,
-  },
-  cautionText: {
-    color: colors.warning,
-  },
-  balanceArea: {
-    alignItems: 'flex-end',
-  },
-  balanceLabel: {
+  positiveBadge: { backgroundColor: colors.successSoft },
+  cautionBadge: { backgroundColor: colors.warningSoft },
+  negativeBadge: { backgroundColor: colors.dangerSoft },
+  neutralBadge: { backgroundColor: colors.surfaceMuted },
+  stateLabel: {
     color: colors.secondaryText,
     fontSize: 11,
-    fontWeight: '700',
-    textTransform: 'uppercase',
+    fontWeight: '800',
+    lineHeight: 16,
   },
+  positiveText: { color: colors.success },
+  cautionText: { color: colors.warning },
+  negativeText: { color: colors.dangerMuted },
+  balanceArea: { alignItems: 'flex-end', gap: spacing.xs },
   balanceValue: {
-    marginTop: 2,
     color: colors.text,
-    fontSize: 25,
+    fontSize: 27,
+    fontWeight: '800',
+    lineHeight: 31,
+  },
+  radio: {
+    width: 22,
+    height: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderRadius: radii.pill,
+    backgroundColor: colors.white,
+  },
+  radioSelected: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primary,
+  },
+  countSummary: {
+    marginTop: spacing.sm,
+    color: colors.secondaryText,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  featuredArgument: {
+    marginTop: spacing.sm,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  featuredArgumentLabel: {
+    color: colors.secondaryText,
+    fontSize: 11,
     fontWeight: '800',
   },
-  weightSummary: {
-    marginTop: spacing.base,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  weightSummaryText: {
-    color: colors.secondaryText,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  argumentSummary: {
-    marginTop: spacing.md,
-    gap: spacing.base,
-  },
-  summarySection: {
-    gap: spacing.xs,
-  },
-  summaryTitle: {
+  featuredArgumentText: {
+    marginTop: spacing.xxs,
     color: colors.text,
     fontSize: 13,
+    lineHeight: 18,
+  },
+  decisiveLabel: { color: colors.primaryDark },
+  analysisNotice: {
+    marginTop: spacing.md,
+    color: colors.secondaryText,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  detailsButton: {
+    minHeight: 44,
+    marginTop: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.base,
+  },
+  detailsButtonPressed: { backgroundColor: colors.primarySoft },
+  detailsButtonLabel: {
+    color: colors.primary,
+    fontSize: 14,
     fontWeight: '800',
   },
-  highlightList: {
-    gap: spacing.xs,
+  expandedIcon: { transform: [{ rotate: '90deg' }] },
+  details: {
+    marginTop: spacing.sm,
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    gap: spacing.md,
   },
-  highlightRow: {
+  detailOption: {
+    padding: spacing.md,
+    borderRadius: radii.md,
+    backgroundColor: colors.background,
+    gap: spacing.base,
+  },
+  detailOptionName: {
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  detailGroup: { gap: spacing.xs },
+  detailGroupTitle: {
+    color: colors.secondaryText,
+    fontSize: 12,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+  },
+  detailArgument: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: spacing.sm,
   },
-  highlightDot: {
+  detailDot: {
     width: 6,
     height: 6,
     marginTop: 7,
     borderRadius: 3,
     backgroundColor: colors.primary,
   },
-  highlightContent: {
-    flex: 1,
-  },
-  highlightText: {
+  detailArgumentContent: { flex: 1 },
+  detailArgumentText: {
     color: colors.text,
     fontSize: 13,
     lineHeight: 19,
   },
-  highlightWeight: {
+  detailWeight: {
     marginTop: 2,
     color: colors.secondaryText,
     fontSize: 11,
     fontWeight: '700',
   },
-  decisiveWeight: {
-    color: colors.primaryDark,
-    fontWeight: '800',
-  },
-  emptyHighlight: {
-    color: colors.muted,
-    fontSize: 12,
-    lineHeight: 18,
-  },
-  tendencyCard: {
-    marginTop: spacing.ml,
-    padding: spacing.md,
-    borderRadius: radii.md,
-  },
-  leadingTendency: {
-    backgroundColor: colors.successSoft,
-  },
-  tieTendency: {
-    backgroundColor: colors.primarySoft,
-  },
-  cautionTendency: {
-    backgroundColor: colors.warningSoft,
-  },
-  tendencyLabel: {
-    color: colors.secondaryText,
-    fontSize: 12,
-    fontWeight: '800',
-    textTransform: 'uppercase',
-  },
-  detailsHint: {
-    marginTop: spacing.md,
-    color: colors.secondaryText,
-    fontSize: 12,
-    lineHeight: 18,
-  },
-  counts: {
-    marginTop: spacing.ml,
-    gap: spacing.sm,
-  },
-  simpleOptionCard: {
-    paddingVertical: spacing.base,
-    paddingHorizontal: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.md,
-    backgroundColor: colors.background,
-  },
-  simpleOptionName: {
-    color: colors.text,
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  simpleOptionMeta: {
-    marginTop: spacing.xs,
-    color: colors.secondaryText,
-    fontSize: 14,
-    fontWeight: '500',
-  },
+  evaluationSummary: { marginTop: spacing.base },
   scoreHeader: {
-    marginTop: spacing.xl,
-    marginBottom: spacing.base,
+    marginBottom: spacing.sm,
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'space-between',
@@ -535,19 +685,46 @@ const styles = StyleSheet.create({
   },
   percentage: {
     color: colors.primary,
-    fontSize: 34,
+    fontSize: 30,
     fontWeight: '800',
-    letterSpacing: -0.8,
-    lineHeight: 38,
+    lineHeight: 34,
   },
-  percentagePositive: {
-    color: colors.success,
-  },
-  message: {
+  percentagePositive: { color: colors.success },
+  evaluationCounts: {
     marginTop: spacing.sm,
-    color: colors.text,
-    fontSize: 17,
-    fontWeight: '700',
-    lineHeight: 24,
+    color: colors.secondaryText,
+    fontSize: 13,
+    fontWeight: '600',
   },
+  evaluationMessage: {
+    marginTop: spacing.xs,
+    color: colors.text,
+    fontSize: 15,
+    fontWeight: '700',
+    lineHeight: 21,
+  },
+  evaluationChoices: {
+    marginTop: spacing.md,
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  evaluationChoice: {
+    minHeight: 58,
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderRadius: radii.md,
+    backgroundColor: colors.surface,
+  },
+  evaluationChoiceLabel: {
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  webButton: { cursor: 'pointer' },
 });

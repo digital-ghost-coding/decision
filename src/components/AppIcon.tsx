@@ -69,7 +69,7 @@ type Props = {
 };
 
 /**
- * Source unique des icônes fonctionnelles Decisionly.
+ * Source unique des icônes fonctionnelles de Décisions.
  *
  * Les contrôles interactifs portent leur libellé d'accessibilité sur leur
  * Pressable parent. Une icône seule peut être annoncée en passant

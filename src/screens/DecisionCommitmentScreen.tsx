@@ -6,46 +6,46 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { BackButton } from '../components/BackButton';
 import { AnimatedPressable } from '../components/AnimatedPressable';
+import { BackButton } from '../components/BackButton';
 import { DecisionCommitCircle } from '../components/DecisionCommitCircle';
 import { FadeInView } from '../components/FadeInView';
 import { COMMIT_COMPLETION_SETTLE_MS } from '../interactions/commitAnimation';
 import { saveDecision } from '../storage/decisionStorage';
-import { colors, layout, motion, radii, spacing } from '../theme';
+import {
+  colors,
+  layout,
+  motion,
+  radii,
+  spacing,
+  typography,
+} from '../theme';
 import type { RootStackParamList } from '../types/navigation';
+import { getCommitCircleSize } from '../utils/commitCircleSize';
 import { transitionDecision } from '../utils/decisionLifecycle';
 
-type Props = NativeStackScreenProps<
-  RootStackParamList,
-  'DecisionCommitment'
->;
+type Props = NativeStackScreenProps<RootStackParamList, 'DecisionCommitment'>;
 
-export function DecisionCommitmentScreen({
-  navigation,
-  route,
-}: Props) {
+export function DecisionCommitmentScreen({ navigation, route }: Props) {
   const confirmationLock = useRef(false);
-
+  const { height: viewportHeight } = useWindowDimensions();
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
   const { decision } = route.params;
   const concreteChoice = decision.chosenOption ?? decision.title;
-
+  const circleSize = getCommitCircleSize(viewportHeight);
+  const isCompact = viewportHeight <= 700;
 
   const waitForCompletionAnimation = () =>
     new Promise<void>((resolve) => {
-      setTimeout(
-        resolve,
-        COMMIT_COMPLETION_SETTLE_MS,
-      );
+      setTimeout(resolve, COMMIT_COMPLETION_SETTLE_MS);
     });
-
 
   const commitDecision = async () => {
     if (confirmationLock.current) {
@@ -59,12 +59,7 @@ export function DecisionCommitmentScreen({
     try {
       await waitForCompletionAnimation();
 
-      const actedDecision = transitionDecision(
-        decision,
-        'acted',
-        concreteChoice,
-      );
-
+      const actedDecision = transitionDecision(decision, 'acted', concreteChoice);
       await saveDecision(actedDecision);
 
       navigation.reset({
@@ -79,17 +74,12 @@ export function DecisionCommitmentScreen({
           },
         ],
       });
-
     } catch {
       confirmationLock.current = false;
       setIsSaving(false);
-
-      setSaveError(
-        'Impossible de confirmer ce choix. Veuillez réessayer.',
-      );
+      setSaveError('Impossible de confirmer ce choix. Veuillez réessayer.');
     }
   };
-
 
   const continueLater = async () => {
     if (confirmationLock.current) {
@@ -119,33 +109,24 @@ export function DecisionCommitmentScreen({
           },
         ],
       });
-
     } catch {
-
       confirmationLock.current = false;
       setIsSaving(false);
-
       setSaveError(
         'Impossible d’enregistrer cette réflexion. Veuillez réessayer.',
       );
     }
   };
 
-
   return (
     <SafeAreaView style={styles.safeArea}>
-
       <StatusBar style="dark" />
-
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-
-        <View style={styles.screen}>
-
-
+        <View style={[styles.screen, isCompact && styles.screenCompact]}>
           <BackButton
             onPress={() => {
               if (!isSaving) {
@@ -154,64 +135,34 @@ export function DecisionCommitmentScreen({
             }}
           />
 
-
-
-          <FadeInView style={styles.content}>
-
-            <Text style={styles.eyebrow}>
-              Confirmer votre choix
+          <FadeInView style={[styles.content, isCompact && styles.contentCompact]}>
+            <Text style={styles.eyebrow}>ACTER MA DÉCISION</Text>
+            <Text accessibilityRole="header" style={styles.title}>
+              Confirmez votre choix
             </Text>
 
-
-            <Text
-              accessibilityRole="header"
-              style={styles.title}
-            >
-              Vous avez choisi d’avancer avec :
-            </Text>
-
-
-            <View style={styles.choiceCard}>
-
-              <Text style={styles.choiceTitle}>
-                {concreteChoice}
-              </Text>
-
-              {decision.format === 'compare' ? (
-                <Text style={styles.choiceContext}>{decision.title}</Text>
-              ) : null}
-
+            <View style={[styles.choiceCard, isCompact && styles.choiceCardCompact]}>
+              <Text style={styles.choiceLabel}>VOTRE CHOIX</Text>
+              <Text style={styles.choiceTitle}>{concreteChoice}</Text>
             </View>
 
-
-
             <Text style={styles.subtitle}>
-
-              Prenez un instant pour reconnaître ce choix.
-              Cette étape ne vous enferme pas : elle marque
-              simplement votre décision d’avancer avec intention.
-
+              Vous pourrez toujours faire évoluer cette décision.
             </Text>
-
-
           </FadeInView>
-
-
-
-
 
           <FadeInView
             delay={90}
-            style={styles.interaction}
+            style={[styles.interaction, isCompact && styles.interactionCompact]}
           >
-
             <DecisionCommitCircle
               disabled={isSaving}
               onComplete={commitDecision}
+              size={circleSize}
             />
 
-
             <AnimatedPressable
+              accessibilityHint="Conserve cette décision en réflexion sans la confirmer"
               accessibilityRole="button"
               disabled={isSaving}
               haptic="selection"
@@ -220,188 +171,136 @@ export function DecisionCommitmentScreen({
               scaleTo={motion.subtlePressScale}
               style={[
                 styles.laterButton,
-                Platform.OS === 'web' &&
-                  styles.webButton,
+                isCompact && styles.laterButtonCompact,
+                Platform.OS === 'web' && styles.webButton,
               ]}
             >
-
               <Text
                 style={[
                   styles.laterLabel,
-                  isSaving &&
-                    styles.laterLabelDisabled,
+                  isSaving && styles.laterLabelDisabled,
                 ]}
               >
                 Je veux encore réfléchir
               </Text>
-
             </AnimatedPressable>
 
-
-
             {saveError ? (
-              <Text
-                accessibilityRole="alert"
-                style={styles.errorText}
-              >
+              <Text accessibilityRole="alert" style={styles.errorText}>
                 {saveError}
               </Text>
             ) : null}
-
-
           </FadeInView>
-
-
         </View>
-
       </ScrollView>
-
-
     </SafeAreaView>
   );
 }
 
-
-
 const styles = StyleSheet.create({
-
   safeArea: {
     flex: 1,
     backgroundColor: colors.background,
   },
-
-
   scrollContent: {
     flexGrow: 1,
   },
-
-
   screen: {
-    flex: 1,
+    flexGrow: 1,
     width: '100%',
     maxWidth: layout.contentWidth,
-    minHeight: '100%',
     alignSelf: 'center',
-    paddingHorizontal:
-      layout.horizontalPadding,
-    paddingTop: 8,
+    paddingHorizontal: layout.horizontalPadding,
+    paddingTop: spacing.sm,
     paddingBottom: spacing.lg,
   },
-
-
+  screenCompact: {
+    paddingBottom: spacing.sm,
+  },
   content: {
-    marginTop: 38,
+    marginTop: spacing.lg,
   },
-
-
+  contentCompact: {
+    marginTop: spacing.md,
+  },
   eyebrow: {
+    ...typography.caption,
     color: colors.primary,
-    fontSize: 14,
-    fontWeight: '700',
-    letterSpacing: 0.3,
-    textTransform: 'uppercase',
+    letterSpacing: 1.1,
   },
-
-
   title: {
-    maxWidth: 470,
-    marginTop: 12,
+    ...typography.headingLarge,
+    marginTop: spacing.xs,
     color: colors.text,
-    fontSize: 34,
-    fontWeight: '800',
-    letterSpacing: -1,
-    lineHeight: 42,
   },
-
-
   choiceCard: {
-    marginTop: 22,
-    padding: 18,
-    borderRadius: radii.card,
+    marginTop: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.base,
+    borderRadius: radii.md,
     backgroundColor: colors.primarySoft,
   },
-
-
+  choiceCardCompact: {
+    marginTop: spacing.base,
+    paddingVertical: spacing.sm,
+  },
+  choiceLabel: {
+    ...typography.caption,
+    color: colors.primaryDark,
+    fontSize: 11,
+    letterSpacing: 0.6,
+  },
   choiceTitle: {
+    ...typography.bodyLarge,
+    marginTop: spacing.xxs,
     color: colors.text,
-    fontSize: 20,
     fontWeight: '800',
-    lineHeight: 28,
   },
-
-  choiceContext: {
-    marginTop: spacing.xs,
-    color: colors.secondaryText,
-    fontSize: 14,
-    lineHeight: 20,
-  },
-
-
   subtitle: {
-    maxWidth: 460,
-    marginTop: 18,
+    ...typography.bodyMedium,
+    marginTop: spacing.base,
     color: colors.secondaryText,
-    fontSize: 18,
-    lineHeight: 28,
   },
-
-
   interaction: {
-    flex: 1,
+    flexGrow: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 36,
-    paddingBottom: 20,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.sm,
   },
-
-
-  confirmHint: {
-    marginTop: 18,
-    color: colors.secondaryText,
-    fontSize: 15,
-    fontWeight: '600',
-    textAlign: 'center',
+  interactionCompact: {
+    justifyContent: 'flex-start',
+    paddingTop: spacing.md,
+    paddingBottom: 0,
   },
-
-
   laterButton: {
-    minHeight: 44,
-    marginTop: 18,
+    minHeight: layout.touchTarget,
+    marginTop: spacing.base,
     justifyContent: 'center',
-    paddingHorizontal: 18,
+    paddingHorizontal: spacing.md,
     borderRadius: radii.base,
   },
-
-
+  laterButtonCompact: {
+    marginTop: spacing.sm,
+  },
   laterButtonPressed: {
     backgroundColor: colors.primarySoft,
   },
-
-
   laterLabel: {
+    ...typography.caption,
     color: colors.primary,
-    fontSize: 15,
-    fontWeight: '700',
   },
-
-
   laterLabelDisabled: {
     color: colors.muted,
   },
-
-
   errorText: {
+    ...typography.caption,
     maxWidth: 340,
-    marginTop: 14,
+    marginTop: spacing.sm,
     color: colors.danger,
-    fontSize: 14,
-    lineHeight: 20,
     textAlign: 'center',
   },
-
-
   webButton: {
     cursor: 'pointer',
   },
-
 });

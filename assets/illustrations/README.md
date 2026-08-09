@@ -23,7 +23,7 @@ Le registre unique `src/constants/journeyIllustrations.ts` sélectionne automati
 
 - Minimaliste et chaleureuse.
 - Formes simples et lisibles sur mobile.
-- Couleurs douces compatibles avec la palette Decisionly.
+- Couleurs douces compatibles avec la palette de Décisions.
 - Une personnalité forte sans surcharge.
 - Une scène ou une métaphore propre à chaque chapitre.
 - Aucun élément purement décoratif.

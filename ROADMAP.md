@@ -1,4 +1,4 @@
-# Decisionly Roadmap
+# Décisions — Roadmap
 
 ## Phase 1 — Fondation
 
@@ -11,6 +11,9 @@
 - [x] Vision Parcours documentée
 - [x] Vision Decision Inbox documentée
 - [x] Principes de gamification non intrusive documentés
+- [x] Nom visible « Décisions » appliqué à l'application et à la documentation actuelle
+- [x] Nom technique `decisions` appliqué au package sans changer les identifiants Expo
+- [x] Compatibilité des anciennes données locales préservée
 
 ### Architecture
 
@@ -66,6 +69,51 @@
 - [x] Message de résultat
 - [x] Barre de progression
 - [x] Retour à la modification
+
+### Résultat et engagement compacts
+
+#### Résultat
+
+- [x] Synthèse comparative compacte
+- [x] Informations essentielles visibles immédiatement
+- [x] Détails accessibles à la demande
+- [x] Sections vides supprimées
+- [x] Textes répétitifs supprimés
+- [x] Surfaces de comparaison plus neutres
+- [x] Tendance lisible sans dépendre de la couleur
+- [x] Aucune option présélectionnée par la tendance
+- [x] Sélection explicite de l'utilisateur
+- [x] CTA principal unique
+- [x] CTA principal visible pendant le scroll
+- [x] Action « Revoir mes arguments » compacte
+
+#### Engagement
+
+- [x] Titre d'engagement raccourci
+- [x] Choix acté affiché de manière compacte
+- [x] Message de réversibilité simplifié
+- [x] Cercle responsive avec tailles centralisées
+- [x] Progression et haptics préservés
+- [ ] Action « Je veux encore réfléchir » toujours visible — validation visuelle requise
+- [x] Safe Area respectée par la structure de l'écran
+
+#### Validation
+
+- [x] Typecheck TypeScript
+- [x] Treize tests automatisés du résultat compact, du calcul et du cercle
+- [x] Expo Doctor — 18 contrôles sur 18
+- [x] Bundles de production Web, iOS et Android
+- [ ] Validation visuelle petit iPhone
+- [ ] Validation visuelle grand iPhone
+- [ ] Validation Android
+- [ ] Validation Web mobile
+- [ ] Validation Web desktop
+- [ ] Validation Dynamic Type
+- [ ] Validation Reduce Motion
+- [ ] Test utilisateur du nouveau résultat
+- [ ] Test utilisateur du cercle compact
+
+Les cases d'implémentation décrivent le code livré. Les validations visuelles, tactiles et utilisateur restent distinctes et ne seront cochées qu'après exécution réelle sur les supports concernés.
 
 ## Cadrage de la décision
 
@@ -173,7 +221,7 @@ La prochaine étape après cette itération est un vrai test utilisateur compren
 
 ## Phase 3 — Engagement
 
-> Cette interaction est la signature de Decisionly.
+> Cette interaction est la signature de Décisions.
 >
 > Le maintien sur le cercle n'est utilisé qu'une seule fois dans tout le produit.
 >
@@ -471,7 +519,7 @@ Objectif : relier les décisions dans le temps et transformer l'expérience en r
 
 ## Phase 7 — App Polish
 
-Objectif : faire de chaque détail une expression cohérente, calme et premium de Decisionly, sans ajouter de complexité métier.
+Objectif : faire de chaque détail une expression cohérente, calme et premium de Décisions, sans ajouter de complexité métier.
 
 ### Animations
 
@@ -559,7 +607,7 @@ Ces tâches décrivent le niveau cible pour l'ensemble de l'application. Elles r
 
 ## Phase 8 — Expérience émotionnelle
 
-Objectif : faire ressentir une évolution continue sans transformer Decisionly en jeu ni ajouter de stimulation gratuite.
+Objectif : faire ressentir une évolution continue sans transformer Décisions en jeu ni ajouter de stimulation gratuite.
 
 - [ ] Illustrations évolutives
 - [ ] Micro-interactions
@@ -652,7 +700,7 @@ Une compilation valide la cohérence du code, pas le rendu, les gestes, le bouto
 
 ## Phase — Expérience premium
 
-Objectif : faire passer Decisionly d'un prototype fonctionnel à une bêta cohérente, identifiable et digne de confiance. Cette phase consolide l'expérience existante ; elle ne doit pas ajouter de complexité métier avant que le parcours principal soit fiable et compréhensible.
+Objectif : faire passer Décisions d'un prototype fonctionnel à une bêta cohérente, identifiable et digne de confiance. Cette phase consolide l'expérience existante ; elle ne doit pas ajouter de complexité métier avant que le parcours principal soit fiable et compréhensible.
 
 Constat de départ : le flux principal et la boucle locale de suivi sont fonctionnels, mais l'identité visuelle reste concentrée dans Parcours et dans le cercle d'engagement. Les tokens typographiques ne sont pas encore appliqués aux écrans, les illustrations doivent être optimisées, la Decision Inbox n'a pas d'interface dédiée et certaines actions permettent encore de terminer une décision sans bilan.
 
